@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+
 import { useWatchlistStore } from "../store/useWatchlistStore";
 import { useStockQuote } from "../hooks/useStockData";
 import { useTheme } from "../hooks/useTheme";

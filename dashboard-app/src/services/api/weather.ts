@@ -28,7 +28,6 @@ export async function fetchCurrentWeather(
     feelsLike: data.main.feels_like,
     humidity: data.main.humidity,
     windSpeed: data.wind.speed,
-    condition: data.weather[0].main,
     description: data.weather[0].description,
     icon: `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`,
     timestamp: data.dt * 1000,
@@ -69,8 +68,8 @@ export async function fetchForecast(
       tempMax: e.main.temp_max,
       humidity: e.main.humidity,
       windSpeed: e.wind.speed,
-      condition: e.weather[0].main,
       description: e.weather[0].description,
+      pop: (e as Record<string, unknown> & { pop?: number }).pop ?? 0,
       icon: `https://openweathermap.org/img/wn/${e.weather[0].icon}@2x.png`,
     })),
   };

@@ -34,7 +34,7 @@ export async function fetchQuote(symbol: string): Promise<StockQuote> {
     change: parseFloat(raw["09. change"]),
     changePercent: parseFloat(raw["10. change percent"].replace("%", "")),
     volume: parseInt(raw["06. volume"], 10),
-    latestTradingDay: raw["07. latest trading day"],
+    timestamp: Date.now(),
   };
 }
 

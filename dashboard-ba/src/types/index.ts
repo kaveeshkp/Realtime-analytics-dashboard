@@ -1,3 +1,17 @@
+export interface CSEQuote {
+  symbol:    string;   // e.g. 'JKH'
+  fullSymbol: string;  // e.g. 'JKH.CM'
+  name:      string;
+  price:     number;   // LKR
+  change:    number;
+  pct:       number;
+  volume:    number;
+  high:      number;
+  low:       number;
+  prevClose: number;
+  marketCap: number;
+}
+
 export interface StockQuote {
   symbol:    string;
   price:     number;

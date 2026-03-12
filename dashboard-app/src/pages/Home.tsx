@@ -1,4 +1,4 @@
-import { useStockQuote, useDailyTimeSeries } from "../hooks/useStockData";
+import { useStockQuote } from "../hooks/useStockData";
 import { useCoinMarkets } from "../hooks/useCryptoData";
 import { useWatchlistStore } from "../store/useWatchlistStore";
 import { useTheme } from "../hooks/useTheme";
@@ -84,7 +84,7 @@ export default function Home() {
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {topCoins.slice(0, 5).map((coin) => {
-              const pct = coin.price_change_percentage_24h ?? 0;
+              const pct = coin.priceChangePercent24h ?? 0;
               const dir = trendDirection(pct);
               return (
                 <div
@@ -106,7 +106,7 @@ export default function Home() {
                     </span>
                   </div>
                   <p className="text-lg font-bold">
-                    {formatCurrency(coin.current_price)}
+                    {formatCurrency(coin.currentPrice)}
                   </p>
                   <p className={`text-sm ${pctColor(pct)}`}>
                     {dir === "up" ? "▲" : dir === "down" ? "▼" : "—"}{" "}

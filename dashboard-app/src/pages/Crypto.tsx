@@ -1,16 +1,14 @@
 import { useState } from "react";
-import { useCoinMarkets, useCoinOHLC } from "../hooks/useCryptoData";
+import { useCoinMarkets } from "../hooks/useCryptoData";
 import { useTheme } from "../hooks/useTheme";
 import { formatCurrency } from "../utils/formatCurrency";
 import { formatPercent, trendDirection } from "../utils/formatPercent";
 import { pctColor } from "../utils/colorScale";
 import type { CoinMarket } from "../types/crypto.types";
 
-type Days = 1 | 7 | 14 | 30;
-
 function CoinRow({ coin }: { coin: CoinMarket }) {
   const { dark } = useTheme();
-  const pct = coin.price_change_percentage_24h ?? 0;
+  const pct = coin.priceChangePercent24h ?? 0;
   const dir = trendDirection(pct);
 
   return (
@@ -28,15 +26,15 @@ function CoinRow({ coin }: { coin: CoinMarket }) {
           </span>
         </div>
       </td>
-      <td className="px-4 py-3 text-right">{formatCurrency(coin.current_price)}</td>
+      <td className="px-4 py-3 text-right">{formatCurrency(coin.currentPrice)}</td>
       <td className={`px-4 py-3 text-right ${pctColor(pct)}`}>
         {dir === "up" ? "▲" : dir === "down" ? "▼" : "—"} {formatPercent(pct)}
       </td>
       <td className="px-4 py-3 text-right text-sm text-gray-500">
-        {formatCurrency(coin.market_cap, "USD", { notation: "compact" })}
+        {formatCurrency(coin.marketCap, "USD", { abbreviate: true })}
       </td>
       <td className="px-4 py-3 text-right text-sm text-gray-500">
-        {formatCurrency(coin.total_volume, "USD", { notation: "compact" })}
+        {formatCurrency(coin.totalVolume, "USD", { abbreviate: true })}
       </td>
     </tr>
   );

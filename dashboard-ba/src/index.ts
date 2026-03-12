@@ -12,15 +12,22 @@ import stocksRouter  from './routes/stocks';
 import cryptoRouter  from './routes/crypto';
 import sportsRouter  from './routes/sports';
 import weatherRouter from './routes/weather';
+import cseRouter     from './routes/cse';
 import { initWebSocket } from './websocket/wsServer';
 
 const app  = express();
 const PORT = process.env.PORT ?? 5000;
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN ?? 'http://localhost:5173';
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGIN ?? 'http://localhost:5173')
+  .split(',')
+  .map(o => o.trim())
+  .concat(['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:5173']);
 
 // ── CORS ────────────────────────────────────────────────────────────────────
 app.use(cors({
-  origin:  ALLOWED_ORIGIN,
+  origin: (origin, cb) => {
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+    cb(new Error(`CORS blocked: ${origin}`));
+  },
   methods: ['GET'],
 }));
 
@@ -43,6 +50,7 @@ app.use('/api/stocks',  stocksRouter);
 app.use('/api/crypto',  cryptoRouter);
 app.use('/api/sports',  sportsRouter);
 app.use('/api/weather', weatherRouter);
+app.use('/api/cse',     cseRouter);
 
 // ── 404 ──────────────────────────────────────────────────────────────────────
 app.use((_req: Request, res: Response) => {

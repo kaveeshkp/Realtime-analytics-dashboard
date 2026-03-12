@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useStockQuote, useDailyTimeSeries, useStockSearch } from "../hooks/useStockData";
+import { useStockQuote, useStockSearch } from "../hooks/useStockData";
 import { useWatchlistStore } from "../store/useWatchlistStore";
 import { useTheme } from "../hooks/useTheme";
 import { formatCurrency } from "../utils/formatCurrency";
@@ -48,7 +48,7 @@ function StockRow({ symbol }: { symbol: string }) {
           onClick={() =>
             inWatchlist
               ? removeItem(symbol)
-              : addItem({ symbol, name: data.name ?? symbol, addedAt: Date.now() })
+              : addItem({ symbol, name: data.name ?? symbol, type: "stock" })
           }
           className={`text-xs px-2 py-1 rounded-full border transition-colors ${
             inWatchlist
