@@ -6,6 +6,13 @@ import { WsMessage, CryptoAsset } from '../types';
 
 let wss: WebSocketServer;
 
+function hasOpenClients(): boolean {
+  for (const client of wss.clients) {
+    if (client.readyState === WebSocket.OPEN) return true;
+  }
+  return false;
+}
+
 function broadcast(msg: WsMessage): void {
   const payload = JSON.stringify(msg);
   wss.clients.forEach(client => {
@@ -17,6 +24,8 @@ function broadcast(msg: WsMessage): void {
 
 async function pushPrices(): Promise<void> {
   try {
+    if (!hasOpenClients()) return;
+
     // Reuse cached data when available to avoid redundant API calls
     let prices = cache.get<CryptoAsset[]>('crypto:prices');
     if (!prices) {

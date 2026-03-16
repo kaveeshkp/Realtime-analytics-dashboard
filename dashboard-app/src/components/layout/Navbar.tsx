@@ -34,11 +34,16 @@ export function Navbar({
 }: NavbarProps) {
   const [tickIdx, setTickIdx] = useState(0);
 
+  // Depend only on ticker.length — ticker array reference changes every App render
+  // (stocks/cryptos are new arrays on each fetch), so using the full array as a dep
+  // would teardown/restart the interval on every state change in App.
+  const tickerLen = ticker.length;
   useEffect(() => {
-    if (ticker.length === 0) return;
-    const t = setInterval(() => setTickIdx((i) => (i + 1) % ticker.length), 3000);
+    if (tickerLen === 0) return;
+    setTickIdx(i => i % tickerLen); // clamp index if length shrinks
+    const t = setInterval(() => setTickIdx(i => (i + 1) % tickerLen), 3000);
     return () => clearInterval(t);
-  }, [ticker]);
+  }, [tickerLen]);
 
   const shown = ticker[tickIdx];
 

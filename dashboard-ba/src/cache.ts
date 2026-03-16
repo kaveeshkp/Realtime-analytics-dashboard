@@ -3,10 +3,17 @@ interface CacheEntry<T> {
   expiresAt: number;
 }
 
+const MAX_SIZE = 500; // safety cap — prevents unbounded memory growth
+
 class TtlCache {
   private readonly store = new Map<string, CacheEntry<unknown>>();
 
   set<T>(key: string, data: T, ttlSeconds: number): void {
+    // Evict oldest (first) entry when at capacity
+    if (this.store.size >= MAX_SIZE && !this.store.has(key)) {
+      const firstKey = this.store.keys().next().value;
+      if (firstKey !== undefined) this.store.delete(firstKey);
+    }
     this.store.set(key, {
       data,
       expiresAt: Date.now() + ttlSeconds * 1000,

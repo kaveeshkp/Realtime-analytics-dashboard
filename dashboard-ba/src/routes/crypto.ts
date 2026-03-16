@@ -22,12 +22,18 @@ router.get('/prices', async (_req: Request, res: Response, next: NextFunction) =
 // GET /api/crypto/history?coin=bitcoin&days=30
 router.get('/history', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const coin    = (req.query.coin as string | undefined) ?? 'bitcoin';
+    const rawCoin = (req.query.coin as string | undefined) ?? 'bitcoin';
+    // Whitelist: only lowercase letters, digits, and hyphens (CoinGecko coin IDs)
+    if (!/^[a-z0-9-]{1,64}$/.test(rawCoin)) {
+      res.status(400).json({ error: 'invalid coin identifier' });
+      return;
+    }
+    const coin    = rawCoin;
     const daysRaw = req.query.days as string | undefined;
     const days    = daysRaw ? parseInt(daysRaw, 10) : 30;
 
-    if (isNaN(days) || days < 1) {
-      res.status(400).json({ error: 'days must be a positive integer' });
+    if (isNaN(days) || days < 1 || days > 365) {
+      res.status(400).json({ error: 'days must be an integer between 1 and 365' });
       return;
     }
 

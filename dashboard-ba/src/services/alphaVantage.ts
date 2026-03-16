@@ -1,8 +1,14 @@
 import axios from 'axios';
 import { StockQuote, DataPoint } from '../types';
 
-const API_KEY  = process.env.ALPHA_VANTAGE_API_KEY ?? 'demo';
+const API_KEY  = process.env.ALPHA_VANTAGE_API_KEY ?? '';
 const BASE_URL = 'https://www.alphavantage.co/query';
+
+function requireKey(): void {
+  if (!API_KEY) {
+    throw new Error('ALPHA_VANTAGE_API_KEY is not set');
+  }
+}
 
 function assertNoRateLimit(data: Record<string, unknown>, symbol: string): void {
   if (data['Note'] || data['Information']) {
@@ -14,6 +20,8 @@ function assertNoRateLimit(data: Record<string, unknown>, symbol: string): void 
 }
 
 export async function fetchStockQuote(symbol: string): Promise<StockQuote> {
+  requireKey();
+
   const { data } = await axios.get<Record<string, unknown>>(BASE_URL, {
     params:  { function: 'GLOBAL_QUOTE', symbol, apikey: API_KEY },
     timeout: 10_000,
@@ -41,6 +49,7 @@ export async function fetchStockQuote(symbol: string): Promise<StockQuote> {
 const RANGE_DAYS: Record<string, number> = { '1W': 7, '1M': 30, '1Y': 365 };
 
 export async function fetchStockHistory(symbol: string, range: string): Promise<DataPoint[]> {
+  requireKey();
   if (range === '1D') return fetchIntradayHistory(symbol);
 
   const { data } = await axios.get<Record<string, unknown>>(BASE_URL, {
@@ -68,6 +77,8 @@ export async function fetchStockHistory(symbol: string, range: string): Promise<
 }
 
 async function fetchIntradayHistory(symbol: string): Promise<DataPoint[]> {
+  requireKey();
+
   const { data } = await axios.get<Record<string, unknown>>(BASE_URL, {
     params: { function: 'TIME_SERIES_INTRADAY', symbol, interval: '5min', apikey: API_KEY },
     timeout: 15_000,

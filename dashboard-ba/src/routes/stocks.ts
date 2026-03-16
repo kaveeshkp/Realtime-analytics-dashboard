@@ -34,7 +34,7 @@ router.get('/batch', async (req: Request, res: Response, next: NextFunction) => 
       return;
     }
 
-    const symbols  = raw.split(',').map(s => s.trim().toUpperCase()).slice(0, 5);
+    const symbols  = raw.split(',').map(s => s.trim().toUpperCase()).slice(0, 10);
     const cacheKey = `stock:batch:${symbols.join(',')}`;
     const cached   = cache.get(cacheKey);
     if (cached) { res.json(cached); return; }
@@ -57,14 +57,14 @@ router.get('/history', async (req: Request, res: Response, next: NextFunction) =
     }
 
     const range       = (req.query.range as string | undefined) ?? '1M';
-    const validRanges = ['1D', '1W', '1M', '1Y'];
+    const validRanges = ['1D', '1W', '1M', '3M', '1Y'];
     if (!validRanges.includes(range)) {
       res.status(400).json({ error: `range must be one of: ${validRanges.join(', ')}` });
       return;
     }
 
     // Cache TTL scales with requested range — no point caching 1Y for only 30s
-    const ttl: Record<string, number> = { '1D': 300, '1W': 900, '1M': 1800, '1Y': 3600 };
+    const ttl: Record<string, number> = { '1D': 300, '1W': 900, '1M': 1800, '3M': 2700, '1Y': 3600 };
     const cacheKey = `stock:history:${symbol}:${range}`;
     const cached   = cache.get(cacheKey);
     if (cached) { res.json(cached); return; }
