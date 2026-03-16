@@ -50,6 +50,47 @@ const fmtVol = (n: number) =>
 const pctColor = (v: number) => (v >= 0 ? "#22d3a5" : "#f87171");
 const pctBg    = (v: number) => (v >= 0 ? "rgba(34,211,165,0.1)" : "rgba(248,113,113,0.1)");
 
+const CRICKET_FLAG_PATTERNS: Array<{ pattern: RegExp; flag: string }> = [
+  { pattern: /india|\bind\b/i, flag: "🇮🇳" },
+  { pattern: /pakistan|\bpak\b/i, flag: "🇵🇰" },
+  { pattern: /sri lanka|\bsl\b/i, flag: "🇱🇰" },
+  { pattern: /bangladesh|\bban\b/i, flag: "🇧🇩" },
+  { pattern: /afghanistan|\bafg\b/i, flag: "🇦🇫" },
+  { pattern: /england|\beng\b/i, flag: "🏴" },
+  { pattern: /scotland|\bsco\b/i, flag: "🏴" },
+  { pattern: /ireland|\bire\b/i, flag: "🇮🇪" },
+  { pattern: /wales|\bwal\b/i, flag: "🏴" },
+  { pattern: /new zealand|\bnz\b/i, flag: "🇳🇿" },
+  { pattern: /south africa|\bsa\b/i, flag: "🇿🇦" },
+  { pattern: /west indies|\bwi\b/i, flag: "🏴" },
+  { pattern: /zimbabwe|\bzim\b/i, flag: "🇿🇼" },
+  { pattern: /nepal|\bnep\b/i, flag: "🇳🇵" },
+  { pattern: /netherlands|\bned\b/i, flag: "🇳🇱" },
+  { pattern: /namibia|\bnam\b/i, flag: "🇳🇦" },
+  { pattern: /oman|\bomn\b/i, flag: "🇴🇲" },
+  { pattern: /canada|\bcan\b/i, flag: "🇨🇦" },
+  { pattern: /usa|united states|\bus\b/i, flag: "🇺🇸" },
+  { pattern: /australia|new south wales|queensland|victoria|tasmania|western australia|south australia/i, flag: "🇦🇺" },
+];
+
+const scorePattern = /\d{1,3}(?:\/\d{1,2})?(?:\s*&\s*\d{1,3}(?:\/\d{1,2})?)?/g;
+
+function parseCricketSide(raw: string): { team: string; innings: string } {
+  const clean = raw.replace(/\*/g, "").replace(/\s+/g, " ").trim();
+  const innings = (clean.match(scorePattern) ?? []).join(" & ").trim();
+  const team = clean
+    .replace(scorePattern, "")
+    .replace(/\s*&\s*/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  return { team: team || raw, innings };
+}
+
+function cricketFlag(teamName: string): string {
+  const hit = CRICKET_FLAG_PATTERNS.find(({ pattern }) => pattern.test(teamName));
+  return hit?.flag ?? "🏏";
+}
+
 // ─── LKR formatter ───────────────────────────────────────────────────────────
 const fmtLKR = (n: number) =>
   n >= 1e9 ? `₨${(n / 1e9).toFixed(1)}B` :
@@ -193,8 +234,8 @@ const Home = ({ setPage, watchlist }: { setPage: (p: string) => void; watchlist:
     refetchInterval: 30_000, staleTime: 25_000,
   });
   const { data: liveScores = [] } = useQuery<MatchScore[]>({
-    queryKey: ["sports", "live", "NBA"],
-    queryFn: () => apiFetch("/api/sports/live?league=NBA"),
+    queryKey: ["sports", "live", "ALL"],
+    queryFn: () => apiFetch("/api/sports/live?league=ALL"),
     refetchInterval: 60_000, staleTime: 55_000,
   });
   const { data: btcHistory } = useQuery<DataPoint[]>({
@@ -224,7 +265,7 @@ const Home = ({ setPage, watchlist }: { setPage: (p: string) => void; watchlist:
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 32 }}>
         <KpiCard label="Tracked Assets"  value={stocks.length + cryptos.length}     sub={`${stocks.length} stocks · ${cryptos.length} crypto`} color="#22d3a5" />
         <KpiCard label="Top Gainer"      value={topGainer ? `+${topGainer.pct.toFixed(2)}%` : "—"} sub={topGainer?.symbol ?? "Loading…"} color="#22d3a5" />
-        <KpiCard label="Live Games"      value={liveGames}                           sub="NBA in progress"   color="#3b82f6" />
+        <KpiCard label="Live Games"      value={liveGames}                           sub="Across all sports"   color="#3b82f6" />
         <KpiCard label="BTC Dominance"   value={`${btcDominance}%`}                 sub="Of total market cap" color="#f59e0b" />
       </div>
 
@@ -438,13 +479,19 @@ const Crypto = ({ watchlist, setWatchlist }: {
 
 // ─── Sports Page ──────────────────────────────────────────────────────────────
 const Sports = () => {
-  const [league, setLeague] = useState("NBA");
-  const LEAGUES = ["NBA", "NFL", "EPL", "MLB"];
+  const [league, setLeague] = useState("ALL");
+  const LEAGUES = [
+    { label: "All Sports", value: "ALL" },
+    { label: "Cricket", value: "CRICKET" },
+    { label: "Rugby", value: "RUGBY" },
+    { label: "Football", value: "FOOTBALL" },
+    { label: "Basketball", value: "BASKETBALL" },
+  ];
 
   const { data: live = [],     isLoading: ll } = useQuery<MatchScore[]>({
     queryKey: ["sports", "live", league],
     queryFn:  () => apiFetch(`/api/sports/live?league=${league}`),
-    refetchInterval: 60_000, staleTime: 55_000,
+    refetchInterval: 30_000, staleTime: 25_000,
   });
   const { data: upcoming = [], isLoading: ul } = useQuery<Fixture[]>({
     queryKey: ["sports", "upcoming", league],
@@ -465,19 +512,74 @@ const Sports = () => {
     UP:   { bg: "rgba(59,130,246,0.15)",  color: "#3b82f6", label: "○ UP"   },
   }[s] ?? { bg: "", color: "", label: s });
 
+  const formatUpdateTime = (raw: string) => {
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return raw;
+    return d.toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const subtitle = league === "CRICKET"
+    ? "Live cricket update feed · Refresh every 30s"
+    : "International matches · all sports · Live refresh every 30s";
+
+  const cricketTickerRows = rows.filter(r => r.league === "CRICKET").slice(0, 12);
+
   return (
     <div style={{ animation: "fadeIn 0.4s ease" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
         <div>
           <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 800, color: "#f0f4ff", margin: 0 }}>Live Sports</h1>
-          <p style={{ color: "#475569", fontSize: 13, marginTop: 4, fontFamily: "'DM Mono', monospace" }}>NBA · NFL · EPL · MLB · Auto-refreshes every 60s</p>
+          <p style={{ color: "#475569", fontSize: 13, marginTop: 4, fontFamily: "'DM Mono', monospace" }}>{subtitle}</p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          {LEAGUES.map(l => (
-            <button key={l} onClick={() => setLeague(l)} style={{ background: league === l ? "rgba(236,72,153,0.15)" : "rgba(255,255,255,0.04)", border: `1px solid ${league === l ? "rgba(236,72,153,0.4)" : "rgba(255,255,255,0.08)"}`, color: league === l ? "#ec4899" : "#64748b", borderRadius: 8, padding: "6px 16px", cursor: "pointer", fontSize: 12, fontFamily: "'DM Mono', monospace" }}>{l}</button>
+          {LEAGUES.map(({ label, value }) => (
+            <button key={value} onClick={() => setLeague(value)} style={{ background: league === value ? "rgba(236,72,153,0.15)" : "rgba(255,255,255,0.04)", border: `1px solid ${league === value ? "rgba(236,72,153,0.4)" : "rgba(255,255,255,0.08)"}`, color: league === value ? "#ec4899" : "#64748b", borderRadius: 8, padding: "6px 16px", cursor: "pointer", fontSize: 12, fontFamily: "'DM Mono', monospace" }}>{label}</button>
           ))}
         </div>
       </div>
+
+      {league === "CRICKET" && cricketTickerRows.length > 0 && (
+        <>
+          <style>{`@keyframes cricketTickerMove { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }`}</style>
+          <div style={{
+            marginBottom: 16,
+            background: "linear-gradient(90deg, rgba(3,105,161,0.2), rgba(14,116,144,0.12))",
+            border: "1px solid rgba(56,189,248,0.25)",
+            borderRadius: 12,
+            padding: "8px 0",
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+          }}>
+            <div style={{
+              display: "inline-flex",
+              gap: 18,
+              alignItems: "center",
+              padding: "0 14px",
+              minWidth: "max-content",
+              animation: "cricketTickerMove 42s linear infinite",
+            }}>
+              {[...cricketTickerRows, ...cricketTickerRows].map((g, idx) => {
+                const h = parseCricketSide(g.home);
+                const a = parseCricketSide(g.away);
+                return (
+                  <span key={`${g.home}-${g.away}-${idx}`} style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: "#e2e8f0" }}>
+                    <span style={{ color: "#38bdf8" }}>{cricketFlag(h.team)} {h.team}</span>
+                    {h.innings && <span style={{ marginLeft: 6, color: "#a5f3fc" }}>[{h.innings}]</span>}
+                    <span style={{ color: "#64748b", margin: "0 8px" }}>vs</span>
+                    <span style={{ color: "#38bdf8" }}>{cricketFlag(a.team)} {a.team}</span>
+                    {a.innings && <span style={{ marginLeft: 6, color: "#a5f3fc" }}>[{a.innings}]</span>}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
 
       {ll && ul ? (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
@@ -486,9 +588,52 @@ const Sports = () => {
       ) : rows.length === 0 ? (
         <div style={{ color: "#334155", fontSize: 14, fontFamily: "'DM Mono', monospace", textAlign: "center" as const, marginTop: 60 }}>No matches found for {league}</div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: league === "CRICKET" ? "1fr" : "repeat(2, 1fr)", gap: 16 }}>
           {rows.map((g, i) => {
             const ss = statusStyle(g.status);
+            if (g.league === "CRICKET") {
+              const home = parseCricketSide(g.home);
+              const away = parseCricketSide(g.away);
+              return (
+                <div key={i} style={{ background: "linear-gradient(135deg, rgba(14,36,50,0.55), rgba(16,24,39,0.7))", border: "1px solid rgba(56,189,248,0.25)", borderRadius: 14, padding: 22, boxShadow: "0 8px 24px rgba(14,165,233,0.12)", borderLeft: "4px solid #38bdf8" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: "#7dd3fc", letterSpacing: 1.2 }}>CRICKET CENTER</span>
+                      <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444", boxShadow: "0 0 12px rgba(239,68,68,0.8)" }} />
+                    </div>
+                    <span style={{ background: ss.bg, color: ss.color, borderRadius: 999, padding: "4px 10px", fontSize: 11, fontFamily: "'DM Mono', monospace" }}>{ss.label}</span>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 10 }}>
+                    <div>
+                      <div style={{ color: "#a5f3fc", fontSize: 11, fontFamily: "'DM Mono', monospace", textTransform: "uppercase" as const, letterSpacing: 1 }}>Team A</div>
+                      <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, color: "#f0f9ff", fontSize: 20, marginTop: 2 }}>{cricketFlag(home.team)} {home.team}</div>
+                      {home.innings && (
+                        <span style={{ display: "inline-block", marginTop: 8, background: "rgba(14,165,233,0.18)", border: "1px solid rgba(125,211,252,0.4)", color: "#bae6fd", borderRadius: 999, padding: "4px 10px", fontFamily: "'DM Mono', monospace", fontSize: 11 }}>
+                          {home.innings}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ color: "#38bdf8", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>vs</div>
+                    <div style={{ textAlign: "right" as const }}>
+                      <div style={{ color: "#a5f3fc", fontSize: 11, fontFamily: "'DM Mono', monospace", textTransform: "uppercase" as const, letterSpacing: 1 }}>Team B</div>
+                      <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, color: "#f0f9ff", fontSize: 20, marginTop: 2 }}>{cricketFlag(away.team)} {away.team}</div>
+                      {away.innings && (
+                        <span style={{ display: "inline-block", marginTop: 8, background: "rgba(14,165,233,0.18)", border: "1px solid rgba(125,211,252,0.4)", color: "#bae6fd", borderRadius: 999, padding: "4px 10px", fontFamily: "'DM Mono', monospace", fontSize: 11 }}>
+                          {away.innings}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px dashed rgba(125,211,252,0.3)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
+                    <span style={{ color: "#cbd5e1", fontSize: 12 }}>Latest update from live feed</span>
+                    <span style={{ color: "#7dd3fc", fontSize: 11, fontFamily: "'DM Mono', monospace" }}>{formatUpdateTime(g.time)}</span>
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <div key={i} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: 24, borderTop: g.status === "LIVE" ? "2px solid #ef4444" : "2px solid transparent" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>

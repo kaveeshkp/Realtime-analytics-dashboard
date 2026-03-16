@@ -1,0 +1,15 @@
+{
+  "name": "real-workspace",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "install:all": "npm --prefix dashboard-ba install && npm --prefix dashboard-app install",
+    "dev": "concurrently -n API,APP -c yellow,cyan \"npm --prefix dashboard-ba run dev\" \"npm --prefix dashboard-app run dev\"",
+    "dev:api": "npm --prefix dashboard-ba run dev",
+    "dev:app": "npm --prefix dashboard-app run dev",
+    "build": "npm --prefix dashboard-ba run build && npm --prefix dashboard-app run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

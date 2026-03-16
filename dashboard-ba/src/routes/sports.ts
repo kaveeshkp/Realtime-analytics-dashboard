@@ -3,12 +3,12 @@ import { cache } from '../cache';
 import { fetchLiveScores, fetchUpcoming } from '../services/sportsApi';
 
 const router       = Router();
-const VALID_LEAGUES = ['NBA', 'NFL', 'EPL', 'MLB'];
+const VALID_LEAGUES = ['ALL', 'CRICKET', 'RUGBY', 'FOOTBALL', 'BASKETBALL'];
 
-// GET /api/sports/live?league=NBA
+// GET /api/sports/live?league=ALL
 router.get('/live', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const league = ((req.query.league as string | undefined) ?? 'NBA').toUpperCase();
+    const league = ((req.query.league as string | undefined) ?? 'ALL').toUpperCase();
     if (!VALID_LEAGUES.includes(league)) {
       res.status(400).json({ error: `league must be one of: ${VALID_LEAGUES.join(', ')}` });
       return;
@@ -26,10 +26,10 @@ router.get('/live', async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-// GET /api/sports/upcoming?league=NFL
+// GET /api/sports/upcoming?league=ALL
 router.get('/upcoming', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const league = ((req.query.league as string | undefined) ?? 'NFL').toUpperCase();
+    const league = ((req.query.league as string | undefined) ?? 'ALL').toUpperCase();
     if (!VALID_LEAGUES.includes(league)) {
       res.status(400).json({ error: `league must be one of: ${VALID_LEAGUES.join(', ')}` });
       return;
