@@ -74,16 +74,25 @@ type Row = {
 
 export default function Sports() {
   const [league, setLeague] = useState("ALL");
+  const isCricket = league === "CRICKET";
 
   const { data: live = [],     isLoading: ll, isError: le } = useQuery<MatchScore[]>({
     queryKey: ["sports", "live", league],
     queryFn:  () => apiFetch(`/api/sports/live?league=${league}`),
-    refetchInterval: 30_000, staleTime: 25_000,
+    refetchInterval: isCricket ? 15_000 : 30_000,
+    staleTime: isCricket ? 12_000 : 25_000,
   });
   const { data: upcoming = [], isLoading: ul, isError: ue } = useQuery<Fixture[]>({
     queryKey: ["sports", "upcoming", league],
     queryFn:  () => apiFetch(`/api/sports/upcoming?league=${league}`),
     refetchInterval: 300_000, staleTime: 280_000,
+  });
+  const { data: cricketHistory = [], isLoading: hl, isError: he } = useQuery<MatchScore[]>({
+    queryKey: ["sports", "history", "CRICKET", 60],
+    queryFn: () => apiFetch("/api/sports/history?league=CRICKET&days=60"),
+    enabled: isCricket,
+    refetchInterval: 600_000,
+    staleTime: 540_000,
   });
 
   const rows: Row[] = [
@@ -92,7 +101,7 @@ export default function Sports() {
   ];
 
   const subtitle = league === "CRICKET"
-    ? "Live cricket update feed · Refresh every 30s"
+    ? "ICC live matches + last 2 months history"
     : "International matches · all sports · Live refresh every 30s";
 
   const cricketTickerRows = rows.filter(r => r.league === "CRICKET").slice(0, 12);
@@ -140,7 +149,7 @@ export default function Sports() {
         </>
       )}
 
-      {(le || ue) && (
+      {(le || ue || he) && (
         <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 12, padding: "14px 20px", marginBottom: 20, color: "#f87171", fontFamily: "'DM Mono', monospace", fontSize: 13 }}>
           Failed to load sports data. The backend may be unavailable — retrying automatically.
         </div>
@@ -216,6 +225,39 @@ export default function Sports() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {isCricket && (
+        <div style={{ marginTop: 26 }}>
+          <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 700, color: "#f0f4ff", margin: 0 }}>ICC Cricket · Past 2 Months</h2>
+          <p style={{ color: "#475569", fontSize: 12, marginTop: 5, fontFamily: "'DM Mono', monospace" }}>Recent ICC entries from the last 60 days</p>
+
+          <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
+            {hl
+              ? Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: 14 }}>
+                  <Skel h={18} />
+                </div>
+              ))
+              : cricketHistory.length === 0
+                ? (
+                  <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: 14, color: "#64748b", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
+                    No ICC cricket history found for the last 60 days.
+                  </div>
+                )
+                : cricketHistory.map((m, i) => (
+                  <div key={`${m.home}-${m.away}-${m.time}-${i}`} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                    <div style={{ color: "#f0f4ff", fontFamily: "'Syne', sans-serif", fontWeight: 600, fontSize: 14 }}>
+                      {cricketFlag(m.home)} {m.home} <span style={{ color: "#334155", fontFamily: "'DM Mono', monospace", fontWeight: 400 }}>vs</span> {cricketFlag(m.away)} {m.away}
+                    </div>
+                    <div style={{ textAlign: "right" as const }}>
+                      <div style={{ background: "rgba(100,116,139,0.15)", color: "#94a3b8", borderRadius: 6, padding: "2px 8px", fontSize: 11, fontFamily: "'DM Mono', monospace", display: "inline-block" }}>✓ FT</div>
+                      <div style={{ marginTop: 4, color: "#64748b", fontSize: 11, fontFamily: "'DM Mono', monospace" }}>{m.time}</div>
+                    </div>
+                  </div>
+                ))}
+          </div>
         </div>
       )}
     </div>

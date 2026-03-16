@@ -4,6 +4,64 @@ import { MatchScore, Fixture } from '../types';
 // ESPN public scoreboard API — no API key required
 const ESPN_BASE = 'https://site.api.espn.com/apis/site/v2/sports';
 const CRICKET_RSS_URL = 'https://static.cricinfo.com/rss/livescores.xml';
+const ICC_KEYWORDS = [
+  /\bICC\b/i,
+  /T20\s*World\s*Cup/i,
+  /Cricket\s*World\s*Cup/i,
+  /Champions\s*Trophy/i,
+  /World\s*Test\s*Championship/i,
+  /WTC\b/i,
+  /Under-?19\s*World\s*Cup/i,
+  /U19\s*World\s*Cup/i,
+  /Women'?s\s*T20\s*World\s*Cup/i,
+  /Women'?s\s*Cricket\s*World\s*Cup/i,
+];
+
+const INTERNATIONAL_TEAM_PATTERNS = [
+  /\bIndia\b/i,
+  /\bPakistan\b/i,
+  /\bAustralia\b/i,
+  /\bEngland\b/i,
+  /\bNew\s+Zealand\b/i,
+  /\bSouth\s+Africa\b/i,
+  /\bSri\s+Lanka\b/i,
+  /\bBangladesh\b/i,
+  /\bAfghanistan\b/i,
+  /\bWest\s+Indies\b/i,
+  /\bZimbabwe\b/i,
+  /\bIreland\b/i,
+  /\bScotland\b/i,
+  /\bNetherlands\b/i,
+  /\bNamibia\b/i,
+  /\bOman\b/i,
+  /\bNepal\b/i,
+  /\bCanada\b/i,
+  /\bUnited\s+States\b/i,
+  /\bUSA\b/i,
+  /\bUnited\s+Arab\s+Emirates\b/i,
+  /\bUAE\b/i,
+  /\bHong\s+Kong\b/i,
+  /\bPapua\s+New\s+Guinea\b/i,
+  /\bPNG\b/i,
+  /\bIND\b/i,
+  /\bPAK\b/i,
+  /\bAUS\b/i,
+  /\bENG\b/i,
+  /\bNZ\b/i,
+  /\bSA\b/i,
+  /\bSL\b/i,
+  /\bBAN\b/i,
+  /\bAFG\b/i,
+  /\bWI\b/i,
+  /\bZIM\b/i,
+  /\bIRE\b/i,
+  /\bSCO\b/i,
+  /\bNED\b/i,
+  /\bNAM\b/i,
+  /\bOMN\b/i,
+  /\bNEP\b/i,
+  /\bCAN\b/i,
+];
 
 interface LeagueConfig {
   sport:  string;
@@ -55,14 +113,80 @@ function getLeagueConfigs(league: string): LeagueConfig[] {
   return LEAGUE_GROUPS[league] ?? [];
 }
 
-async function fetchCricketLiveScores(): Promise<MatchScore[]> {
+function isIccMatchTitle(title: string): boolean {
+  return ICC_KEYWORDS.some((rx) => rx.test(title));
+}
+
+function normalizeTeamName(raw: string): string {
+  return raw
+    .replace(/\d{1,3}(?:\/\d{1,2})?(?:\s*&\s*\d{1,3}(?:\/\d{1,2})?)?/g, '')
+    .replace(/\*/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function isInternationalTeamName(team: string): boolean {
+  const normalized = normalizeTeamName(team);
+  return INTERNATIONAL_TEAM_PATTERNS.some((rx) => rx.test(normalized));
+}
+
+function isInternationalCricketTitle(title: string): boolean {
+  const { home, away } = cricketTitleToTeams(title);
+  return isInternationalTeamName(home) && isInternationalTeamName(away);
+}
+
+interface CricketRssItem {
+  title: string;
+  pubDate: string;
+  link: string;
+}
+
+function parseRfcDate(raw: string): Date | null {
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return null;
+  return d;
+}
+
+async function fetchIccCricketRssItems(): Promise<CricketRssItem[]> {
   const { data } = await axios.get<string>(CRICKET_RSS_URL, { timeout: 10_000 });
   const xml = typeof data === 'string' ? data : '';
-  const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => m[1]);
+
+  const allItems = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)]
+    .map((m) => m[1])
+    .map((item) => ({
+      title: decodeXml(item.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? 'Cricket Match'),
+      pubDate: decodeXml(item.match(/<pubDate>([\s\S]*?)<\/pubDate>/)?.[1] ?? ''),
+      link: decodeXml(item.match(/<link>([\s\S]*?)<\/link>/)?.[1] ?? ''),
+    }));
+
+  const strictIccInternational = allItems.filter(
+    (item) => isIccMatchTitle(item.title) && isInternationalCricketTitle(item.title),
+  );
+
+  // Some feeds omit tournament labels; keep results strict to international teams
+  // even when explicit ICC keywords are missing.
+  const mapped = strictIccInternational.length > 0
+    ? strictIccInternational
+    : allItems.filter((item) => isInternationalCricketTitle(item.title));
+
+  // Deduplicate identical title+timestamp pairs from feed mirrors.
+  const seen = new Set<string>();
+  const unique: CricketRssItem[] = [];
+  for (const item of mapped) {
+    const key = `${item.title}|${item.pubDate}|${item.link}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(item);
+  }
+  return unique;
+}
+
+async function fetchCricketLiveScores(): Promise<MatchScore[]> {
+  const items = await fetchIccCricketRssItems();
 
   return items.slice(0, 20).map((item) => {
-    const title = decodeXml(item.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? 'Cricket Match');
-    const pubDate = decodeXml(item.match(/<pubDate>([\s\S]*?)<\/pubDate>/)?.[1] ?? '');
+    const title = item.title;
+    const pubDate = item.pubDate;
     const { home, away } = cricketTitleToTeams(title);
 
     return {
@@ -76,6 +200,40 @@ async function fetchCricketLiveScores(): Promise<MatchScore[]> {
       date: new Date(pubDate || Date.now()).toISOString().split('T')[0],
     } satisfies MatchScore;
   });
+}
+
+export async function fetchCricketHistory(days = 60): Promise<MatchScore[]> {
+  const from = Date.now() - days * 24 * 60 * 60 * 1000;
+  const items = await fetchIccCricketRssItems();
+
+  return items
+    .filter((item) => {
+      const dt = parseRfcDate(item.pubDate);
+      // Some RSS items miss pubDate; keep them as recent entries so UI isn't empty.
+      if (dt === null) return true;
+      return dt.getTime() >= from;
+    })
+    .sort((a, b) => {
+      const ta = parseRfcDate(a.pubDate)?.getTime() ?? 0;
+      const tb = parseRfcDate(b.pubDate)?.getTime() ?? 0;
+      return tb - ta;
+    })
+    .map((item) => {
+      const { home, away } = cricketTitleToTeams(item.title);
+      const d = parseRfcDate(item.pubDate);
+      const when = d ?? new Date();
+
+      return {
+        league: 'CRICKET',
+        home,
+        away,
+        homeScore: 0,
+        awayScore: 0,
+        status: 'FT' as const,
+        time: item.pubDate || 'Recent update',
+        date: when.toISOString().split('T')[0],
+      } satisfies MatchScore;
+    });
 }
 
 async function fetchEspnLiveScores(cfg: LeagueConfig): Promise<MatchScore[]> {
