@@ -15,11 +15,11 @@ const CSEMarket = lazy(() => import("./pages/CSE"));
 const Portfolio = lazy(() => import("./pages/Portfolio"));
 
 const NAV_ITEMS = [
-  { id: "home",      label: "Overview",  icon: "⬡" },
-  { id: "crypto",    label: "Crypto",    icon: "◉" },
-  { id: "sports",    label: "Sports",    icon: "◎" },
-  { id: "cse",       label: "Stocks 🇱🇰", icon: "" },
-  { id: "portfolio", label: "Portfolio", icon: "◇" },
+  { id: "home",      label: "Overview",  icon: "home" },
+  { id: "crypto",    label: "Crypto",    icon: "crypto" },
+  { id: "sports",    label: "Sports",    icon: "sports" },
+  { id: "cse",       label: "Stocks 🇱🇰", icon: "stocks" },
+  { id: "portfolio", label: "Portfolio", icon: "portfolio" },
 ];
 
 export default function App() {

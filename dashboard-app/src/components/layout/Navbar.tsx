@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Icon } from "../ui/Icon";
 
 interface NavItem {
   id: string;
@@ -113,7 +114,9 @@ export function Navbar({
               transition: "all 0.2s",
             }}
           >
-            <span style={{ marginRight: 5 }}>{n.icon}</span>
+            <span style={{ marginRight: 5, display: "flex", alignItems: "center" }}>
+              <Icon name={n.icon} size={16} />
+            </span>
             {n.label}
           </button>
         ))}
@@ -159,9 +162,11 @@ export function Navbar({
               cursor: "pointer",
               color: "#94a3b8",
               fontSize: 14,
+              display: "flex",
+              alignItems: "center",
             }}
           >
-            ☆
+            <Icon name="watchlist" size={16} />
           </button>
         )}
 
@@ -176,9 +181,11 @@ export function Navbar({
             cursor: "pointer",
             color: "#94a3b8",
             fontSize: 14,
+            display: "flex",
+            alignItems: "center",
           }}
         >
-          {dark ? "☀" : "☾"}
+          <Icon name={dark ? "sun" : "moon"} size={16} />
         </button>
       </div>
     </nav>

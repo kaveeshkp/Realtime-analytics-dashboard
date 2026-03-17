@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { MiniSparkline } from '../../components/ui/MiniSparkline';
+import { OptimizedImage } from '../../components/ui/OptimizedImage';
 import { fmt, pctColor, pctBg } from '../../utils/dashFormat';
 import type { CryptoAsset } from '../../types/dashboard.types';
 
@@ -20,8 +21,6 @@ export const CryptoRow = memo(function CryptoRow({
   isSelected,
   onSelect,
 }: CryptoRowProps) {
-  const OptimizedImage = require('../ui/OptimizedImage').OptimizedImage;
-
   return (
     <div
       onClick={() => onSelect(c.id)}
