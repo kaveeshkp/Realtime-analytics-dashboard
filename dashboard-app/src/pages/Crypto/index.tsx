@@ -4,6 +4,7 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "rec
 import { apiFetch } from "../../services/api/client";
 import { KpiCard } from "../../components/dashboard/KpiCard";
 import { Skel } from "../../components/ui/Skeleton";
+import { ErrorBanner } from "../../components/ui/ErrorBanner";
 import { MiniSparkline } from "../../components/ui/MiniSparkline";
 import { fmt, pctColor, pctBg } from "../../utils/dashFormat";
 import type { CryptoAsset, DataPoint } from "../../types/dashboard.types";
@@ -16,12 +17,12 @@ interface CryptoProps {
 export default function Crypto({ watchlist, setWatchlist }: CryptoProps) {
   const [selectedId, setSelectedId] = useState("bitcoin");
 
-  const { data: cryptos = [], isLoading } = useQuery<CryptoAsset[]>({
+  const { data: cryptos = [], isLoading, isError: ce, refetch: refetchCryptos } = useQuery<CryptoAsset[]>({
     queryKey: ["crypto", "prices"],
     queryFn: () => apiFetch("/api/crypto/prices"),
     refetchInterval: 30_000, staleTime: 25_000,
   });
-  const { data: history } = useQuery<DataPoint[]>({
+  const { data: history, isError: he } = useQuery<DataPoint[]>({
     queryKey: ["crypto", "history", selectedId, 30],
     queryFn: () => apiFetch(`/api/crypto/history?coin=${selectedId}&days=30`),
     staleTime: 300_000,
@@ -41,6 +42,16 @@ export default function Crypto({ watchlist, setWatchlist }: CryptoProps) {
         <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 800, color: "#f0f4ff", margin: 0 }}>Cryptocurrency</h1>
         <p style={{ color: "#475569", fontSize: 13, marginTop: 4, fontFamily: "'DM Mono', monospace" }}>Top {cryptos.length || 10} by market cap · Live prices</p>
       </div>
+
+      {(ce || he) && (
+        <ErrorBanner
+          error={new Error('Failed to load crypto data')}
+          message="Some crypto data failed to load. Retrying automatically..."
+          onRetry={() => {
+            if (ce) refetchCryptos();
+          }}
+        />
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 24 }}>
         <KpiCard label="Total Market Cap" value={totalMarketCap ? fmt(totalMarketCap) : "—"} sub={`Top ${cryptos.length} coins`} color="#f59e0b" />

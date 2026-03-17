@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "./services/api/client";
 import { Navbar } from "./components/layout/Navbar";
 import { AppSidebar } from "./components/layout/AppSidebar";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { ErrorToast } from "./components/ui/ErrorToast";
 import { STOCK_SYMBOLS, WATCHLIST_DEFAULT } from "./constants/stocks";
 import type { StockQuote, CryptoAsset } from "./types/dashboard.types";
 
@@ -43,55 +45,59 @@ export default function App() {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: dark ? "#080c14" : "#f0f4ff", color: dark ? "#f0f4ff" : "#0f172a", fontFamily: "'DM Sans', sans-serif" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pulse { 0%,100% { opacity:0.4; } 50% { opacity:0.8; } }
-        button { transition: all 0.15s ease; }
-        button:hover { opacity: 0.85; }
-        input::placeholder { color: #334155; }
-      `}</style>
+    <ErrorBoundary>
+      <div style={{ minHeight: "100vh", background: dark ? "#080c14" : "#f0f4ff", color: dark ? "#f0f4ff" : "#0f172a", fontFamily: "'DM Sans', sans-serif" }}>
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500&display=swap');
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          ::-webkit-scrollbar { width: 4px; }
+          ::-webkit-scrollbar-track { background: transparent; }
+          ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+          @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+          @keyframes pulse { 0%,100% { opacity:0.4; } 50% { opacity:0.8; } }
+          button { transition: all 0.15s ease; }
+          button:hover { opacity: 0.85; }
+          input::placeholder { color: #334155; }
+        `}</style>
 
-      <Navbar
-        page={page}
-        onNavigate={setPage}
-        navItems={NAV_ITEMS}
-        ticker={ticker}
-        dark={dark}
-        onToggleTheme={() => setDark(d => !d)}
-        onOpenWatchlist={() => setSidebarOpen(true)}
-      />
+        <ErrorToast />
 
-      <button
-        onClick={() => setSidebarOpen(true)}
-        style={{ position: "fixed", bottom: 28, right: 28, zIndex: 30, background: "linear-gradient(135deg,#22d3a5,#3b82f6)", border: "none", borderRadius: "50%", width: 52, height: 52, cursor: "pointer", fontSize: 20, color: "#080c14", boxShadow: "0 4px 20px rgba(34,211,165,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}
-      >
-        ☆
-      </button>
+        <Navbar
+          page={page}
+          onNavigate={setPage}
+          navItems={NAV_ITEMS}
+          ticker={ticker}
+          dark={dark}
+          onToggleTheme={() => setDark(d => !d)}
+          onOpenWatchlist={() => setSidebarOpen(true)}
+        />
 
-      <AppSidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        watchlist={watchlist}
-        setWatchlist={setWatchlist}
-        stocks={stocks}
-        cryptos={cryptos}
-      />
+        <button
+          onClick={() => setSidebarOpen(true)}
+          style={{ position: "fixed", bottom: 28, right: 28, zIndex: 30, background: "linear-gradient(135deg,#22d3a5,#3b82f6)", border: "none", borderRadius: "50%", width: 52, height: 52, cursor: "pointer", fontSize: 20, color: "#080c14", boxShadow: "0 4px 20px rgba(34,211,165,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}
+        >
+          ☆
+        </button>
 
-      <main style={{ maxWidth: 1280, margin: "0 auto", padding: "32px 24px" }}>
-        <Suspense fallback={<div style={{ color: "#64748b", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>Loading view...</div>}>
-          {page === "home"      && <Home      setPage={setPage} watchlist={watchlist} />}
-          {page === "crypto"    && <Crypto    watchlist={watchlist} setWatchlist={setWatchlist} />}
-          {page === "sports"    && <Sports />}
-          {page === "cse"       && <CSEMarket />}
-          {page === "portfolio" && <Portfolio stocks={stocks} cryptos={cryptos} />}
-        </Suspense>
-      </main>
-    </div>
+        <AppSidebar
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          watchlist={watchlist}
+          setWatchlist={setWatchlist}
+          stocks={stocks}
+          cryptos={cryptos}
+        />
+
+        <main style={{ maxWidth: 1280, margin: "0 auto", padding: "32px 24px" }}>
+          <Suspense fallback={<div style={{ color: "#64748b", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>Loading view...</div>}>
+            {page === "home"      && <Home      setPage={setPage} watchlist={watchlist} />}
+            {page === "crypto"    && <Crypto    watchlist={watchlist} setWatchlist={setWatchlist} />}
+            {page === "sports"    && <Sports />}
+            {page === "cse"       && <CSEMarket />}
+            {page === "portfolio" && <Portfolio stocks={stocks} cryptos={cryptos} />}
+          </Suspense>
+        </main>
+      </div>
+    </ErrorBoundary>
   );
 }

@@ -3,6 +3,7 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "rec
 import { apiFetch } from "../../services/api/client";
 import { KpiCard } from "../../components/dashboard/KpiCard";
 import { Skel } from "../../components/ui/Skeleton";
+import { ErrorBanner } from "../../components/ui/ErrorBanner";
 import { fmt, pctColor, pctBg } from "../../utils/dashFormat";
 import { STOCK_SYMBOLS } from "../../constants/stocks";
 import type { StockQuote, CryptoAsset, MatchScore, DataPoint } from "../../types/dashboard.types";
@@ -13,17 +14,17 @@ interface HomeProps {
 }
 
 export default function Home({ setPage, watchlist }: HomeProps) {
-  const { data: stocks = [],  isLoading: sl } = useQuery<StockQuote[]>({
+  const { data: stocks = [],  isLoading: sl, isError: se, refetch: refetchStocks } = useQuery<StockQuote[]>({
     queryKey: ["stocks", "batch"],
     queryFn: () => apiFetch(`/api/stocks/batch?symbols=${STOCK_SYMBOLS}`),
     refetchInterval: 30_000, staleTime: 25_000,
   });
-  const { data: cryptos = [], isLoading: cl } = useQuery<CryptoAsset[]>({
+  const { data: cryptos = [], isLoading: cl, isError: ce, refetch: refetchCryptos } = useQuery<CryptoAsset[]>({
     queryKey: ["crypto", "prices"],
     queryFn: () => apiFetch("/api/crypto/prices"),
     refetchInterval: 30_000, staleTime: 25_000,
   });
-  const { data: liveScores = [] } = useQuery<MatchScore[]>({
+  const { data: liveScores = [], isError: se2 } = useQuery<MatchScore[]>({
     queryKey: ["sports", "live", "ALL"],
     queryFn: () => apiFetch("/api/sports/live?league=ALL"),
     refetchInterval: 60_000, staleTime: 55_000,
@@ -51,6 +52,17 @@ export default function Home({ setPage, watchlist }: HomeProps) {
         <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 32, fontWeight: 800, color: "#f0f4ff", margin: 0, letterSpacing: -1 }}>Market Overview</h1>
         <p style={{ color: "#475569", fontSize: 14, marginTop: 6, fontFamily: "'DM Mono', monospace" }}>Live data · Updated just now</p>
       </div>
+
+      {(se || ce || se2) && (
+        <ErrorBanner
+          error={new Error('Failed to load market data')}
+          message="Some data failed to load. The backend may be unavailable — retrying automatically."
+          onRetry={() => {
+            if (se) refetchStocks();
+            if (ce) refetchCryptos();
+          }}
+        />
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 32 }}>
         <KpiCard label="Tracked Assets"  value={stocks.length + cryptos.length}     sub={`${stocks.length} stocks · ${cryptos.length} crypto`} color="#22d3a5" />
