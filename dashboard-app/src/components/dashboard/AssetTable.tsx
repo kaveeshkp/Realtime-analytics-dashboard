@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, memo } from "react";
 import { Sparkline } from "../charts/Sparkline";
 
 export interface AssetRow {
@@ -45,11 +45,14 @@ export function AssetTable({
     }
   };
 
-  const sorted = [...rows].sort((a, b) => {
-    const mul = sortDir === "asc" ? 1 : -1;
-    if (sortKey === "symbol") return mul * a.symbol.localeCompare(b.symbol);
-    return mul * (Number(a[sortKey]) - Number(b[sortKey]));
-  });
+  // Memoize the sorted data to avoid recalculating on every render
+  const sorted = useMemo(() => {
+    return [...rows].sort((a, b) => {
+      const mul = sortDir === "asc" ? 1 : -1;
+      if (sortKey === "symbol") return mul * a.symbol.localeCompare(b.symbol);
+      return mul * (Number(a[sortKey]) - Number(b[sortKey]));
+    });
+  }, [rows, sortKey, sortDir]);
 
   const SortBtn = ({ col, label }: { col: SortKey; label: string }) => (
     <span
@@ -187,3 +190,6 @@ export function AssetTable({
     </div>
   );
 }
+
+// Export memoized version to prevent unnecessary re-renders when props haven't changed
+export const MemoizedAssetTable = memo(AssetTable);

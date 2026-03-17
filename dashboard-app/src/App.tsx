@@ -28,12 +28,12 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [watchlist,   setWatchlist]   = useState<string[]>(WATCHLIST_DEFAULT);
 
-  const { data: stocks  = [] } = useQuery<StockQuote[]>({
+  const { data: stocks  = [], isLoading: stocksLoading, error: stocksError, refetch: refetchStocks } = useQuery<StockQuote[]>({
     queryKey: ["stocks", "batch"],
     queryFn:  () => apiFetch(`/api/stocks/batch?symbols=${STOCK_SYMBOLS}`),
     refetchInterval: 30_000, staleTime: 25_000,
   });
-  const { data: cryptos = [] } = useQuery<CryptoAsset[]>({
+  const { data: cryptos = [], isLoading: cryptosLoading, error: cryptosError, refetch: refetchCryptos } = useQuery<CryptoAsset[]>({
     queryKey: ["crypto", "prices"],
     queryFn:  () => apiFetch("/api/crypto/prices"),
     refetchInterval: 30_000, staleTime: 25_000,
@@ -90,8 +90,8 @@ export default function App() {
 
         <main style={{ maxWidth: 1280, margin: "0 auto", padding: "32px 24px" }}>
           <Suspense fallback={<div style={{ color: "#64748b", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>Loading view...</div>}>
-            {page === "home"      && <Home      setPage={setPage} watchlist={watchlist} />}
-            {page === "crypto"    && <Crypto    watchlist={watchlist} setWatchlist={setWatchlist} />}
+            {page === "home"      && <Home setPage={setPage} watchlist={watchlist} stocks={stocks} cryptos={cryptos} stocksLoading={stocksLoading} cryptosLoading={cryptosLoading} stocksError={stocksError} cryptosError={cryptosError} onRefreshStocks={refetchStocks} onRefreshCryptos={refetchCryptos} />}
+            {page === "crypto"    && <Crypto watchlist={watchlist} setWatchlist={setWatchlist} />}
             {page === "sports"    && <Sports />}
             {page === "cse"       && <CSEMarket />}
             {page === "portfolio" && <Portfolio stocks={stocks} cryptos={cryptos} />}

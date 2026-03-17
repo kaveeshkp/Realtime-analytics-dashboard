@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { KpiCard } from "../../components/dashboard/KpiCard";
 import { Skel } from "../../components/ui/Skeleton";
@@ -16,30 +16,32 @@ export default function Portfolio({ stocks, cryptos }: PortfolioProps) {
   const [newSymbol, setNewSymbol] = useState("");
   const [newQty,    setNewQty]    = useState("");
 
-  const findPrice = (sym: string) => {
+  const findPrice = useCallback((sym: string) => {
     const s = stocks.find(a => a.symbol === sym);
     if (s) return { price: s.price, pct: s.pct, change: s.change, name: STOCK_META[sym] ?? sym };
     const c = cryptos.find(a => a.symbol === sym);
     if (c) return { price: c.price, pct: c.pct, change: c.change, name: c.name };
     return null;
-  };
+  }, [stocks, cryptos]);
 
-  const portfolioItems = Object.entries(holdings)
-    .map(([sym, qty]) => {
-      const asset = findPrice(sym);
-      if (!asset) return null;
-      const value  = asset.price * qty;
-      const cost   = asset.price * qty * (1 - asset.pct / 100 * 5);
-      const pnl    = value - cost;
-      const pnlPct = cost > 0 ? (pnl / cost) * 100 : 0;
-      return { sym, qty, asset, value, pnl, pnlPct };
-    })
-    .filter((item): item is NonNullable<typeof item> => item !== null);
+  const portfolioItems = useMemo(() => {
+    return Object.entries(holdings)
+      .map(([sym, qty]) => {
+        const asset = findPrice(sym);
+        if (!asset) return null;
+        const value  = asset.price * qty;
+        const cost   = asset.price * qty * (1 - asset.pct / 100 * 5);
+        const pnl    = value - cost;
+        const pnlPct = cost > 0 ? (pnl / cost) * 100 : 0;
+        return { sym, qty, asset, value, pnl, pnlPct };
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+  }, [holdings, stocks, cryptos]);
 
-  const totalValue = portfolioItems.reduce((s, i) => s + i.value, 0);
-  const totalPnL   = portfolioItems.reduce((s, i) => s + i.pnl, 0);
+  const totalValue = useMemo(() => portfolioItems.reduce((s, i) => s + i.value, 0), [portfolioItems]);
+  const totalPnL   = useMemo(() => portfolioItems.reduce((s, i) => s + i.pnl, 0), [portfolioItems]);
 
-  const addHolding = () => {
+  const addHolding = useCallback(() => {
     const sym = newSymbol.toUpperCase().trim();
     const qty = parseFloat(newQty);
     if (sym && qty > 0 && findPrice(sym)) {
@@ -47,10 +49,10 @@ export default function Portfolio({ stocks, cryptos }: PortfolioProps) {
       setNewSymbol("");
       setNewQty("");
     }
-  };
+  }, [newSymbol, newQty, findPrice]);
 
-  const availableSymbols = [...stocks.map(s => s.symbol), ...cryptos.map(c => c.symbol)];
-  const barData = portfolioItems.map(i => ({ name: i.sym, value: Math.round(i.value) }));
+  const availableSymbols = useMemo(() => [...stocks.map(s => s.symbol), ...cryptos.map(c => c.symbol)], [stocks, cryptos]);
+  const barData = useMemo(() => portfolioItems.map(i => ({ name: i.sym, value: Math.round(i.value) })), [portfolioItems]);
 
   return (
     <div style={{ animation: "fadeIn 0.4s ease" }}>

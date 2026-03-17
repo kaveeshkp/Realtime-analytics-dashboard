@@ -1,5 +1,4 @@
 import { Component, ReactNode } from 'react';
-import { useErrorStore } from '../store/useErrorStore';
 
 interface ErrorBoundaryProps {
   children: ReactNode;

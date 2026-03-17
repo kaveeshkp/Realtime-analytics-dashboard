@@ -5,8 +5,9 @@ import { apiFetch } from "../../services/api/client";
 import { KpiCard } from "../../components/dashboard/KpiCard";
 import { Skel } from "../../components/ui/Skeleton";
 import { ErrorBanner } from "../../components/ui/ErrorBanner";
-import { MiniSparkline } from "../../components/ui/MiniSparkline";
-import { fmt, pctColor, pctBg } from "../../utils/dashFormat";
+import { OptimizedImage } from "../../components/ui/OptimizedImage";
+import { CryptoRow } from "./CryptoRow";
+import { fmt, pctColor } from "../../utils/dashFormat";
 import type { CryptoAsset, DataPoint } from "../../types/dashboard.types";
 
 interface CryptoProps {
@@ -76,28 +77,13 @@ export default function Crypto({ watchlist, setWatchlist }: CryptoProps) {
               </div>
             ))
             : cryptos.map((c, i) => (
-              <div
+              <CryptoRow
                 key={c.id}
-                onClick={() => setSelectedId(c.id)}
-                style={{ display: "grid", gridTemplateColumns: "50px 1fr 120px 100px 110px 80px", padding: "14px 20px", cursor: "pointer", alignItems: "center", borderBottom: "1px solid rgba(255,255,255,0.04)", background: selectedId === c.id ? "rgba(245,158,11,0.06)" : "transparent", borderLeft: selectedId === c.id ? "2px solid #f59e0b" : "2px solid transparent", transition: "all 0.15s" }}
-              >
-                <span style={{ fontFamily: "'DM Mono', monospace", color: "#334155", fontSize: 13 }}>{i + 1}</span>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  {c.image && <img src={c.image} alt={c.name} style={{ width: 20, height: 20, borderRadius: "50%" }} referrerPolicy="no-referrer" />}
-                  <div>
-                    <div style={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, color: "#f0f4ff", fontSize: 14 }}>{c.symbol}</div>
-                    <div style={{ fontSize: 11, color: "#475569" }}>{c.name}</div>
-                  </div>
-                </div>
-                <span style={{ fontFamily: "'DM Mono', monospace", color: "#f0f4ff", fontSize: 13, textAlign: "right" as const }}>{c.price > 1 ? fmt(c.price) : `$${c.price.toFixed(4)}`}</span>
-                <span style={{ textAlign: "right" as const }}>
-                  <span style={{ background: pctBg(c.pct), color: pctColor(c.pct), borderRadius: 5, padding: "3px 8px", fontSize: 11, fontFamily: "'DM Mono', monospace" }}>{c.pct > 0 ? "+" : ""}{c.pct.toFixed(2)}%</span>
-                </span>
-                <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#475569", textAlign: "right" as const }}>{fmt(c.marketCap)}</span>
-                <div style={{ display: "flex", justifyContent: "flex-end" as const }}>
-                  <MiniSparkline data={c.sparkline} positive={c.pct >= 0} />
-                </div>
-              </div>
+                crypto={c}
+                index={i}
+                isSelected={selectedId === c.id}
+                onSelect={setSelectedId}
+              />
             ))}
         </div>
 
@@ -108,7 +94,7 @@ export default function Crypto({ watchlist, setWatchlist }: CryptoProps) {
               <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: 20 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    {selectedCoin.image && <img src={selectedCoin.image} alt={selectedCoin.name} style={{ width: 36, height: 36, borderRadius: "50%" }} referrerPolicy="no-referrer" />}
+                    {selectedCoin.image && <OptimizedImage src={selectedCoin.image} alt={selectedCoin.name} width={36} height={36} fallbackSrc="◉" />}
                     <div>
                       <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, color: "#f59e0b", fontSize: 22 }}>{selectedCoin.symbol}</div>
                       <div style={{ fontSize: 12, color: "#475569", marginTop: 2 }}>{selectedCoin.name}</div>

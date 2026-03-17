@@ -5,25 +5,34 @@ import { KpiCard } from "../../components/dashboard/KpiCard";
 import { Skel } from "../../components/ui/Skeleton";
 import { ErrorBanner } from "../../components/ui/ErrorBanner";
 import { fmt, pctColor, pctBg } from "../../utils/dashFormat";
-import { STOCK_SYMBOLS } from "../../constants/stocks";
 import type { StockQuote, CryptoAsset, MatchScore, DataPoint } from "../../types/dashboard.types";
 
 interface HomeProps {
   setPage: (p: string) => void;
   watchlist: string[];
+  stocks?: StockQuote[];
+  cryptos?: CryptoAsset[];
+  stocksLoading?: boolean;
+  cryptosLoading?: boolean;
+  stocksError?: Error | null;
+  cryptosError?: Error | null;
+  onRefreshStocks?: () => void;
+  onRefreshCryptos?: () => void;
 }
 
-export default function Home({ setPage, watchlist }: HomeProps) {
-  const { data: stocks = [],  isLoading: sl, isError: se, refetch: refetchStocks } = useQuery<StockQuote[]>({
-    queryKey: ["stocks", "batch"],
-    queryFn: () => apiFetch(`/api/stocks/batch?symbols=${STOCK_SYMBOLS}`),
-    refetchInterval: 30_000, staleTime: 25_000,
-  });
-  const { data: cryptos = [], isLoading: cl, isError: ce, refetch: refetchCryptos } = useQuery<CryptoAsset[]>({
-    queryKey: ["crypto", "prices"],
-    queryFn: () => apiFetch("/api/crypto/prices"),
-    refetchInterval: 30_000, staleTime: 25_000,
-  });
+export default function Home({
+  setPage,
+  watchlist,
+  stocks = [],
+  cryptos = [],
+  stocksLoading = false,
+  cryptosLoading = false,
+  stocksError = null,
+  cryptosError = null,
+  onRefreshStocks,
+  onRefreshCryptos,
+}: HomeProps) {
+  // Only fetch sports and crypto history locally (Home-specific data)
   const { data: liveScores = [], isError: se2 } = useQuery<MatchScore[]>({
     queryKey: ["sports", "live", "ALL"],
     queryFn: () => apiFetch("/api/sports/live?league=ALL"),
@@ -34,6 +43,11 @@ export default function Home({ setPage, watchlist }: HomeProps) {
     queryFn: () => apiFetch("/api/crypto/history?coin=bitcoin&days=30"),
     staleTime: 300_000,
   });
+
+  const sl = stocksLoading;
+  const cl = cryptosLoading;
+  const se = stocksError;
+  const ce = cryptosError;
 
   const allTickers = [
     ...stocks.map(s => ({ symbol: s.symbol, pct: s.pct })),
@@ -58,8 +72,8 @@ export default function Home({ setPage, watchlist }: HomeProps) {
           error={new Error('Failed to load market data')}
           message="Some data failed to load. The backend may be unavailable — retrying automatically."
           onRetry={() => {
-            if (se) refetchStocks();
-            if (ce) refetchCryptos();
+            if (se && onRefreshStocks) onRefreshStocks();
+            if (ce && onRefreshCryptos) onRefreshCryptos();
           }}
         />
       )}

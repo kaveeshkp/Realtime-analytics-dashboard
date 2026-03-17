@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useErrorStore, AppError } from '../store/useErrorStore';
+import { useErrorStore, AppError } from '../../store/useErrorStore';
 
 const typeStyles: Record<
   string,
@@ -135,7 +135,7 @@ export function ErrorToast() {
         pointerEvents: 'auto',
       }}
     >
-      {errors.map((error) => (
+      {errors.map((error: AppError) => (
         <ErrorToastItem
           key={error.id}
           error={error}

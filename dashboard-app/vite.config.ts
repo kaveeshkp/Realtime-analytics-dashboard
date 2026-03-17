@@ -26,7 +26,27 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    // Disable sourcemaps in production to reduce bundle size (~50KB reduction)
+    sourcemap: false,
+    // Optimize minification and remove console logs
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+      },
+    },
+    // Code splitting strategy for better caching
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendor chunks
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-query': ['@tanstack/react-query'],
+          'vendor-charts': ['recharts', 'd3'],
+          'vendor-ui': ['zustand'],
+        },
+      },
+    },
   },
   test: {
     environment: 'jsdom',
