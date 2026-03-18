@@ -6,7 +6,6 @@ import { SearchBar } from "../../components/filters/SearchBar";
 import type { MatchScore, Fixture } from "../../types/dashboard.types";
 
 const LEAGUES = [
-  { label: "All Sports", value: "ALL" },
   { label: "Cricket",    value: "CRICKET" },
   { label: "Rugby",      value: "RUGBY" },
   { label: "Football",   value: "FOOTBALL" },
@@ -74,7 +73,7 @@ type Row = {
 };
 
 export default function Sports() {
-  const [league, setLeague] = useState("ALL");
+  const [league, setLeague] = useState("CRICKET");
   const [searchQuery, setSearchQuery] = useState("");
   const isCricket = league === "CRICKET";
 
@@ -134,12 +133,12 @@ export default function Sports() {
 
   return (
     <div style={{ animation: "fadeIn 0.4s ease" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <div>
           <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 800, color: "#f0f4ff", margin: 0 }}>Live Sports</h1>
           <p style={{ color: "#475569", fontSize: 13, marginTop: 4, fontFamily: "'DM Mono', monospace" }}>{subtitle}</p>
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 8 }}>
           {LEAGUES.map(({ label, value }) => (
             <button
               key={value}
@@ -149,8 +148,11 @@ export default function Sports() {
               {label}
             </button>
           ))}
-          <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Search teams..." />
         </div>
+      </div>
+
+      <div style={{ marginBottom: 20 }}>
+        <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Search teams..." />
       </div>
 
       {league === "CRICKET" && cricketTickerRows.length > 0 && (
