@@ -184,7 +184,7 @@ async function fetchIccCricketRssItems(): Promise<CricketRssItem[]> {
 async function fetchCricketLiveScores(): Promise<MatchScore[]> {
   const items = await fetchIccCricketRssItems();
 
-  return items.slice(0, 20).map((item) => {
+  return items.slice(0, 50).map((item) => {
     const title = item.title;
     const pubDate = item.pubDate;
     const { home, away } = cricketTitleToTeams(title);

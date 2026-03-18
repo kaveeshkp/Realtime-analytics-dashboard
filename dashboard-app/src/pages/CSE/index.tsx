@@ -1,10 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { apiFetch } from "../../services/api/client";
 import { KpiCard } from "../../components/dashboard/KpiCard";
 import { Skel } from "../../components/ui/Skeleton";
 import { MiniSparkline } from "../../components/ui/MiniSparkline";
+import { SearchBar } from "../../components/filters/SearchBar";
 import { fmtVol, fmtLKR, pctColor, pctBg, generateSparkline } from "../../utils/dashFormat";
 import type { CSEQuote, DataPoint } from "../../types/dashboard.types";
 
@@ -14,6 +15,7 @@ export default function CSEMarket() {
   const [selected, setSelected] = useState("JKH");
   const [range,    setRange]    = useState("1M");
   const [sortBy,   setSortBy]   = useState("symbol");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: cseStocks = [], isLoading } = useQuery<CSEQuote[]>({
     queryKey: ["cse", "quotes"],
@@ -29,21 +31,43 @@ export default function CSEMarket() {
 
   const selectedStock = cseStocks.find(s => s.symbol === selected);
 
+  const filteredStocks = useMemo(() => {
+    if (!searchQuery.trim()) return cseStocks;
+    const q = searchQuery.toLowerCase().trim();
+    return cseStocks.filter(s =>
+      s.symbol.toLowerCase().includes(q) ||
+      s.name.toLowerCase().includes(q) ||
+      s.fullSymbol.toLowerCase().includes(q)
+    );
+  }, [cseStocks, searchQuery]);
+
   const sparklines = useMemo(
-    () => Object.fromEntries(cseStocks.map(s => [s.symbol, generateSparkline(s.price)])),
+    () => Object.fromEntries(filteredStocks.map(s => [s.symbol, generateSparkline(s.price)])),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [cseStocks.map(s => `${s.symbol}${s.pct >= 0}`).join(",")]
+    [filteredStocks.map(s => `${s.symbol}${s.pct >= 0}`).join(",")]
   );
 
-  const sorted = [...cseStocks].sort((a, b) =>
-    sortBy === "price"  ? b.price - a.price :
-    sortBy === "pct"    ? b.pct - a.pct :
-    a.symbol.localeCompare(b.symbol)
-  );
+  const sorted = useMemo(() => {
+    return [...filteredStocks].sort((a, b) =>
+      sortBy === "price"  ? b.price - a.price :
+      sortBy === "pct"    ? b.pct - a.pct :
+      a.symbol.localeCompare(b.symbol)
+    );
+  }, [filteredStocks, sortBy]);
 
-  const totalMcap = cseStocks.reduce((s, q) => s + q.marketCap, 0);
-  const gainers   = cseStocks.filter(s => s.pct >  0).length;
-  const losers    = cseStocks.filter(s => s.pct <  0).length;
+  const totalMcap = filteredStocks.reduce((s, q) => s + q.marketCap, 0);
+  const gainers   = filteredStocks.filter(s => s.pct >  0).length;
+  const losers    = filteredStocks.filter(s => s.pct <  0).length;
+
+  // Auto-select first item when current selection is filtered out
+  useEffect(() => {
+    if (searchQuery && filteredStocks.length > 0) {
+      const stillVisible = filteredStocks.find(s => s.symbol === selected);
+      if (!stillVisible) {
+        setSelected(filteredStocks[0].symbol);
+      }
+    }
+  }, [filteredStocks, selected, searchQuery]);
 
   return (
     <div style={{ animation: "fadeIn 0.4s ease" }}>
@@ -69,10 +93,14 @@ export default function CSEMarket() {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginBottom: 24 }}>
-        <KpiCard label="Listed"        value={cseStocks.length}                                           sub="Tracked CSE stocks"       color="#10b981" />
+        <KpiCard label="Listed"        value={filteredStocks.length}                                      sub={searchQuery ? `${cseStocks.length} total` : "Tracked CSE stocks"} color="#10b981" />
         <KpiCard label="Gainers"       value={gainers}                                                    sub={`${losers} losers today`} color={gainers >= losers ? "#22d3a5" : "#f87171"} />
         <KpiCard label="Total Mkt Cap" value={totalMcap > 0 ? fmtLKR(totalMcap) : "—"}                  sub="Combined (LKR)"           color="#3b82f6" />
         <KpiCard label="Currency"      value="LKR · ₨"                                                   sub="Sri Lankan Rupee"         color="#f59e0b" />
+      </div>
+
+      <div style={{ marginBottom: 20 }}>
+        <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Search stocks..." />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 20 }}>
@@ -98,7 +126,13 @@ export default function CSEMarket() {
                   <span style={{ fontSize: 11, color: "#1e293b" }}>The backend may be temporarily unavailable.</span>
                 </div>
               )
-              : sorted.map(s => (
+              : sorted.length === 0 && searchQuery
+                ? (
+                  <div style={{ padding: "60px 20px", textAlign: "center" as const, color: "#334155", fontFamily: "'DM Mono', monospace", fontSize: 13 }}>
+                    No results found for "{searchQuery}"
+                  </div>
+                )
+                : sorted.map(s => (
                 <div
                   key={s.symbol}
                   onClick={() => setSelected(s.symbol)}

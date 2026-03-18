@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "../../services/api/client";
 import { Skel } from "../../components/ui/Skeleton";
+import { SearchBar } from "../../components/filters/SearchBar";
 import type { MatchScore, Fixture } from "../../types/dashboard.types";
 
 const LEAGUES = [
@@ -74,6 +75,7 @@ type Row = {
 
 export default function Sports() {
   const [league, setLeague] = useState("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
   const isCricket = league === "CRICKET";
 
   const { data: live = [],     isLoading: ll, isError: le } = useQuery<MatchScore[]>({
@@ -100,11 +102,35 @@ export default function Sports() {
     ...upcoming.map(f => ({ ...f, homeScore: undefined, awayScore: undefined })),
   ];
 
+  const filteredRows = useMemo(() => {
+    if (!searchQuery.trim()) return rows;
+    const q = searchQuery.toLowerCase().trim();
+    return rows.filter(match => {
+      if (match.league === "CRICKET") {
+        const home = parseCricketSide(match.home).team.toLowerCase();
+        const away = parseCricketSide(match.away).team.toLowerCase();
+        return home.includes(q) || away.includes(q);
+      }
+      return match.home.toLowerCase().includes(q) ||
+             match.away.toLowerCase().includes(q);
+    });
+  }, [rows, searchQuery]);
+
+  const filteredCricketHistory = useMemo(() => {
+    if (!searchQuery.trim()) return cricketHistory;
+    const q = searchQuery.toLowerCase().trim();
+    return cricketHistory.filter(match => {
+      const home = match.home.toLowerCase();
+      const away = match.away.toLowerCase();
+      return home.includes(q) || away.includes(q);
+    });
+  }, [cricketHistory, searchQuery]);
+
   const subtitle = league === "CRICKET"
     ? "ICC live matches + last 2 months history"
     : "International matches · all sports · Live refresh every 30s";
 
-  const cricketTickerRows = rows.filter(r => r.league === "CRICKET").slice(0, 12);
+  const cricketTickerRows = filteredRows.filter(r => r.league === "CRICKET").slice(0, 12);
 
   return (
     <div style={{ animation: "fadeIn 0.4s ease" }}>
@@ -113,7 +139,7 @@ export default function Sports() {
           <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 800, color: "#f0f4ff", margin: 0 }}>Live Sports</h1>
           <p style={{ color: "#475569", fontSize: 13, marginTop: 4, fontFamily: "'DM Mono', monospace" }}>{subtitle}</p>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {LEAGUES.map(({ label, value }) => (
             <button
               key={value}
@@ -123,6 +149,7 @@ export default function Sports() {
               {label}
             </button>
           ))}
+          <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Search teams..." />
         </div>
       </div>
 
@@ -166,9 +193,13 @@ export default function Sports() {
         <div style={{ color: "#334155", fontSize: 14, fontFamily: "'DM Mono', monospace", textAlign: "center" as const, marginTop: 60 }}>
           No matches found for {league}
         </div>
+      ) : filteredRows.length === 0 && searchQuery ? (
+        <div style={{ padding: "60px 20px", textAlign: "center" as const, color: "#334155", fontFamily: "'DM Mono', monospace", fontSize: 13 }}>
+          No results found for "{searchQuery}"
+        </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: league === "CRICKET" ? "1fr" : "repeat(2, 1fr)", gap: 16 }}>
-          {rows.map((g, i) => {
+          {filteredRows.map((g, i) => {
             const ss = statusStyle(g.status);
             if (g.league === "CRICKET") {
               const home = parseCricketSide(g.home);
@@ -246,7 +277,13 @@ export default function Sports() {
                     No ICC cricket history found for the last 60 days.
                   </div>
                 )
-                : cricketHistory.map((m, i) => (
+                : filteredCricketHistory.length === 0 && searchQuery
+                  ? (
+                    <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: 14, color: "#64748b", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
+                      No cricket history found for "{searchQuery}"
+                    </div>
+                  )
+                  : filteredCricketHistory.map((m, i) => (
                   <div key={`${m.home}-${m.away}-${m.time}-${i}`} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                     <div style={{ color: "#f0f4ff", fontFamily: "'Syne', sans-serif", fontWeight: 600, fontSize: 14 }}>
                       {cricketFlag(m.home)} {m.home} <span style={{ color: "#334155", fontFamily: "'DM Mono', monospace", fontWeight: 400 }}>vs</span> {cricketFlag(m.away)} {m.away}

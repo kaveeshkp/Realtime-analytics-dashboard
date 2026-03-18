@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { apiFetch } from "../../services/api/client";
@@ -7,6 +7,7 @@ import { Skel } from "../../components/ui/Skeleton";
 import { ErrorBanner } from "../../components/ui/ErrorBanner";
 import { OptimizedImage } from "../../components/ui/OptimizedImage";
 import { CryptoRow } from "./CryptoRow";
+import { SearchBar } from "../../components/filters/SearchBar";
 import { fmt, pctColor } from "../../utils/dashFormat";
 import type { CryptoAsset, DataPoint } from "../../types/dashboard.types";
 
@@ -17,6 +18,7 @@ interface CryptoProps {
 
 export default function Crypto({ watchlist, setWatchlist }: CryptoProps) {
   const [selectedId, setSelectedId] = useState("bitcoin");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: cryptos = [], isLoading, isError: ce, refetch: refetchCryptos } = useQuery<CryptoAsset[]>({
     queryKey: ["crypto", "prices"],
@@ -29,6 +31,16 @@ export default function Crypto({ watchlist, setWatchlist }: CryptoProps) {
     staleTime: 300_000,
   });
 
+  const filteredCryptos = useMemo(() => {
+    if (!searchQuery.trim()) return cryptos;
+    const q = searchQuery.toLowerCase().trim();
+    return cryptos.filter(c =>
+      c.symbol.toLowerCase().includes(q) ||
+      c.name.toLowerCase().includes(q) ||
+      c.id.toLowerCase().includes(q)
+    );
+  }, [cryptos, searchQuery]);
+
   const selectedCoin   = cryptos.find(c => c.id === selectedId);
   const inWatchlist    = watchlist.includes(selectedCoin?.symbol ?? "");
   const totalMarketCap = cryptos.reduce((s, c) => s + c.marketCap, 0);
@@ -36,6 +48,16 @@ export default function Crypto({ watchlist, setWatchlist }: CryptoProps) {
   const btcDom         = totalMarketCap > 0
     ? ((cryptos.find(c => c.id === "bitcoin")?.marketCap ?? 0) / totalMarketCap * 100).toFixed(1)
     : "—";
+
+  // Auto-select first item when current selection is filtered out
+  useEffect(() => {
+    if (searchQuery && filteredCryptos.length > 0) {
+      const stillVisible = filteredCryptos.find(c => c.id === selectedId);
+      if (!stillVisible) {
+        setSelectedId(filteredCryptos[0].id);
+      }
+    }
+  }, [filteredCryptos, selectedId, searchQuery]);
 
   return (
     <div style={{ animation: "fadeIn 0.4s ease" }}>
@@ -60,6 +82,10 @@ export default function Crypto({ watchlist, setWatchlist }: CryptoProps) {
         <KpiCard label="BTC Dominance"     value={`${btcDom}%`}                           sub="Of total cap"      color="#22d3a5" />
       </div>
 
+      <div style={{ marginBottom: 20 }}>
+        <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Search crypto..." />
+      </div>
+
       <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 20 }}>
         {/* Coin list table */}
         <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, overflow: "hidden" }}>
@@ -76,15 +102,21 @@ export default function Crypto({ watchlist, setWatchlist }: CryptoProps) {
                 <Skel w={20} /><Skel w={110} /><Skel w={80} /><Skel w={60} /><Skel w={90} /><Skel w={80} h={32} />
               </div>
             ))
-            : cryptos.map((c, i) => (
-              <CryptoRow
-                key={c.id}
-                crypto={c}
-                index={i}
-                isSelected={selectedId === c.id}
-                onSelect={setSelectedId}
-              />
-            ))}
+            : filteredCryptos.length === 0 && searchQuery
+              ? (
+                <div style={{ padding: "60px 20px", textAlign: "center" as const, color: "#334155", fontFamily: "'DM Mono', monospace", fontSize: 13 }}>
+                  No results found for "{searchQuery}"
+                </div>
+              )
+              : filteredCryptos.map((c, i) => (
+                <CryptoRow
+                  key={c.id}
+                  crypto={c}
+                  index={i}
+                  isSelected={selectedId === c.id}
+                  onSelect={setSelectedId}
+                />
+              ))}
         </div>
 
         {/* Detail panel */}

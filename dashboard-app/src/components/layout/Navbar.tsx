@@ -115,7 +115,11 @@ export function Navbar({
             }}
           >
             <span style={{ marginRight: 5, display: "flex", alignItems: "center" }}>
-              <Icon name={n.icon} size={16} />
+              <Icon
+                name={n.icon}
+                size={16}
+                color={page === n.id ? "primary" : "muted"}
+              />
             </span>
             {n.label}
           </button>
@@ -160,13 +164,21 @@ export function Navbar({
               borderRadius: 8,
               padding: "6px 10px",
               cursor: "pointer",
-              color: "#94a3b8",
               fontSize: 14,
               display: "flex",
               alignItems: "center",
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(34, 211, 165, 0.12)";
+              e.currentTarget.style.borderColor = "rgba(34, 211, 165, 0.3)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+              e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
             }}
           >
-            <Icon name="watchlist" size={16} />
+            <Icon name="watchlist" size={16} color="accent" />
           </button>
         )}
 
@@ -179,13 +191,21 @@ export function Navbar({
             borderRadius: 8,
             padding: "6px 10px",
             cursor: "pointer",
-            color: "#94a3b8",
             fontSize: 14,
             display: "flex",
             alignItems: "center",
+            transition: "all 0.2s",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(245, 158, 11, 0.12)";
+            e.currentTarget.style.borderColor = "rgba(245, 158, 11, 0.3)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+            e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
           }}
         >
-          <Icon name={dark ? "sun" : "moon"} size={16} />
+          <Icon name={dark ? "sun" : "moon"} size={16} color="accent" />
         </button>
       </div>
     </nav>
