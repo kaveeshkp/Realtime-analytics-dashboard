@@ -21,6 +21,8 @@ export const CryptoRow = memo(function CryptoRow({
   isSelected,
   onSelect,
 }: CryptoRowProps) {
+  const fallbackLogo = `https://cryptoicons.org/api/icon/${c.symbol.toLowerCase()}/64`;
+
   return (
     <div
       onClick={() => onSelect(c.id)}
@@ -40,7 +42,7 @@ export const CryptoRow = memo(function CryptoRow({
         {i + 1}
       </span>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        {c.image && <OptimizedImage src={c.image} alt={c.name} width={20} height={20} fallbackSrc="◉" />}
+        <OptimizedImage src={c.image || fallbackLogo} alt={c.name} width={20} height={20} fallbackSrc={fallbackLogo} />
         <div>
           <div style={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, color: '#f0f4ff', fontSize: 14 }}>
             {c.symbol}

@@ -1,4 +1,4 @@
-import { useState, FC, ImgHTMLAttributes } from 'react';
+import { useEffect, useState, FC, ImgHTMLAttributes } from 'react';
 
 interface OptimizedImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'src'> {
   src: string;
@@ -24,18 +24,37 @@ export const OptimizedImage: FC<OptimizedImageProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [imgError, setImgError] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState(src);
+
+  useEffect(() => {
+    setCurrentSrc(src);
+    setIsLoading(true);
+    setImgError(false);
+  }, [src]);
+
+  const fallbackIsUrl =
+    typeof fallbackSrc === 'string' && /^(https?:)?\/\//.test(fallbackSrc);
 
   const handleLoad = () => {
     setIsLoading(false);
+    setImgError(false);
   };
 
   const handleError = () => {
+    if (fallbackIsUrl && currentSrc !== fallbackSrc) {
+      setCurrentSrc(fallbackSrc);
+      setIsLoading(true);
+      return;
+    }
     setIsLoading(false);
     setImgError(true);
   };
 
-  // Show fallback on error
+  // Show text fallback only after primary + fallback image URL both fail.
   if (imgError && fallbackSrc && typeof fallbackSrc === 'string') {
+    const fallbackText = fallbackIsUrl ? '◉' : fallbackSrc;
+    const iconSize = typeof width === 'number' ? width / 2 : 12;
+
     return (
       <div
         style={{
@@ -46,10 +65,10 @@ export const OptimizedImage: FC<OptimizedImageProps> = ({
           justifyContent: 'center',
           background: placeholderColor,
           borderRadius: 4,
-          fontSize: width as number / 2,
+          fontSize: iconSize,
         }}
       >
-        {fallbackSrc}
+        {fallbackText}
       </div>
     );
   }
@@ -68,7 +87,7 @@ export const OptimizedImage: FC<OptimizedImageProps> = ({
         />
       )}
       <img
-        src={src}
+        src={currentSrc}
         alt={alt}
         width={width}
         height={height}

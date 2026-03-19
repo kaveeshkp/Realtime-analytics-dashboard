@@ -41,7 +41,13 @@ export default function Crypto({ watchlist, setWatchlist }: CryptoProps) {
     );
   }, [cryptos, searchQuery]);
 
+  const visibleCryptos = useMemo(() => {
+    if (searchQuery.trim()) return filteredCryptos;
+    return cryptos.slice(0, 10);
+  }, [cryptos, filteredCryptos, searchQuery]);
+
   const selectedCoin   = cryptos.find(c => c.id === selectedId);
+  const selectedFallbackLogo = selectedCoin ? `https://cryptoicons.org/api/icon/${selectedCoin.symbol.toLowerCase()}/64` : '';
   const inWatchlist    = watchlist.includes(selectedCoin?.symbol ?? "");
   const totalMarketCap = cryptos.reduce((s, c) => s + c.marketCap, 0);
   const totalVolume    = cryptos.reduce((s, c) => s + c.volume, 0);
@@ -49,21 +55,21 @@ export default function Crypto({ watchlist, setWatchlist }: CryptoProps) {
     ? ((cryptos.find(c => c.id === "bitcoin")?.marketCap ?? 0) / totalMarketCap * 100).toFixed(1)
     : "—";
 
-  // Auto-select first item when current selection is filtered out
+  // Keep a valid selection for the currently visible list.
   useEffect(() => {
-    if (searchQuery && filteredCryptos.length > 0) {
-      const stillVisible = filteredCryptos.find(c => c.id === selectedId);
+    if (visibleCryptos.length > 0) {
+      const stillVisible = visibleCryptos.find(c => c.id === selectedId);
       if (!stillVisible) {
-        setSelectedId(filteredCryptos[0].id);
+        setSelectedId(visibleCryptos[0].id);
       }
     }
-  }, [filteredCryptos, selectedId, searchQuery]);
+  }, [visibleCryptos, selectedId]);
 
   return (
     <div style={{ animation: "fadeIn 0.4s ease" }}>
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 800, color: "#f0f4ff", margin: 0 }}>Cryptocurrency</h1>
-        <p style={{ color: "#475569", fontSize: 13, marginTop: 4, fontFamily: "'DM Mono', monospace" }}>Top {cryptos.length || 10} by market cap · Live prices</p>
+        <p style={{ color: "#475569", fontSize: 13, marginTop: 4, fontFamily: "'DM Mono', monospace" }}>Top 10 by market cap · Search across all loaded coins</p>
       </div>
 
       {(ce || he) && (
@@ -102,13 +108,13 @@ export default function Crypto({ watchlist, setWatchlist }: CryptoProps) {
                 <Skel w={20} /><Skel w={110} /><Skel w={80} /><Skel w={60} /><Skel w={90} /><Skel w={80} h={32} />
               </div>
             ))
-            : filteredCryptos.length === 0 && searchQuery
+            : visibleCryptos.length === 0 && searchQuery
               ? (
                 <div style={{ padding: "60px 20px", textAlign: "center" as const, color: "#334155", fontFamily: "'DM Mono', monospace", fontSize: 13 }}>
                   No results found for "{searchQuery}"
                 </div>
               )
-              : filteredCryptos.map((c, i) => (
+              : visibleCryptos.map((c, i) => (
                 <CryptoRow
                   key={c.id}
                   crypto={c}
@@ -126,7 +132,13 @@ export default function Crypto({ watchlist, setWatchlist }: CryptoProps) {
               <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: 20 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    {selectedCoin.image && <OptimizedImage src={selectedCoin.image} alt={selectedCoin.name} width={36} height={36} fallbackSrc="◉" />}
+                    <OptimizedImage
+                      src={selectedCoin.image || selectedFallbackLogo}
+                      alt={selectedCoin.name}
+                      width={36}
+                      height={36}
+                      fallbackSrc={selectedFallbackLogo || '◉'}
+                    />
                     <div>
                       <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, color: "#f59e0b", fontSize: 22 }}>{selectedCoin.symbol}</div>
                       <div style={{ fontSize: 12, color: "#475569", marginTop: 2 }}>{selectedCoin.name}</div>
