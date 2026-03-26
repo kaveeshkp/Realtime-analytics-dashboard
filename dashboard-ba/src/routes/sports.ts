@@ -3,7 +3,7 @@ import { cache } from '../cache';
 import { fetchLiveScores, fetchUpcoming, fetchCricketHistory } from '../services/sportsApi';
 
 const router       = Router();
-const VALID_LEAGUES = ['ALL', 'CRICKET', 'RUGBY', 'FOOTBALL', 'BASKETBALL'];
+const VALID_LEAGUES = ['ALL', 'CRICKET', 'RUGBY', 'BASKETBALL'];
 
 // GET /api/sports/live?league=ALL
 router.get('/live', async (req: Request, res: Response, next: NextFunction) => {
@@ -47,7 +47,7 @@ router.get('/upcoming', async (req: Request, res: Response, next: NextFunction) 
   }
 });
 
-// GET /api/sports/history?league=CRICKET&days=60
+// GET /api/sports/history?league=CRICKET&days=30
 router.get('/history', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const league = ((req.query.league as string | undefined) ?? 'CRICKET').toUpperCase();
@@ -57,9 +57,9 @@ router.get('/history', async (req: Request, res: Response, next: NextFunction) =
     }
 
     const daysRaw = req.query.days as string | undefined;
-    const days = daysRaw ? parseInt(daysRaw, 10) : 60;
-    if (!Number.isInteger(days) || days < 1 || days > 90) {
-      res.status(400).json({ error: 'days must be an integer between 1 and 90' });
+    const days = daysRaw ? parseInt(daysRaw, 10) : 30;
+    if (!Number.isInteger(days) || days < 1 || days > 31) {
+      res.status(400).json({ error: 'days must be an integer between 1 and 31' });
       return;
     }
 

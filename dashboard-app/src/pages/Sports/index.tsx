@@ -6,9 +6,9 @@ import { SearchBar } from "../../components/filters/SearchBar";
 import type { MatchScore, Fixture } from "../../types/dashboard.types";
 
 const LEAGUES = [
+  { label: "All Sports", value: "ALL" },
   { label: "Cricket",    value: "CRICKET" },
   { label: "Rugby",      value: "RUGBY" },
-  { label: "Football",   value: "FOOTBALL" },
   { label: "Basketball", value: "BASKETBALL" },
 ];
 
@@ -73,7 +73,7 @@ type Row = {
 };
 
 export default function Sports() {
-  const [league, setLeague] = useState("CRICKET");
+  const [league, setLeague] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const isCricket = league === "CRICKET";
 
@@ -89,8 +89,8 @@ export default function Sports() {
     refetchInterval: 300_000, staleTime: 280_000,
   });
   const { data: cricketHistory = [], isLoading: hl, isError: he } = useQuery<MatchScore[]>({
-    queryKey: ["sports", "history", "CRICKET", 60],
-    queryFn: () => apiFetch("/api/sports/history?league=CRICKET&days=60"),
+    queryKey: ["sports", "history", "CRICKET", 30],
+    queryFn: () => apiFetch("/api/sports/history?league=CRICKET&days=30"),
     enabled: isCricket,
     refetchInterval: 600_000,
     staleTime: 540_000,
@@ -126,7 +126,7 @@ export default function Sports() {
   }, [cricketHistory, searchQuery]);
 
   const subtitle = league === "CRICKET"
-    ? "ICC live matches + last 2 months history"
+    ? "ICC live matches + last 1 month history"
     : "International matches · all sports · Live refresh every 30s";
 
   const cricketTickerRows = filteredRows.filter(r => r.league === "CRICKET").slice(0, 12);
@@ -193,7 +193,7 @@ export default function Sports() {
         </div>
       ) : rows.length === 0 ? (
         <div style={{ color: "#334155", fontSize: 14, fontFamily: "'DM Mono', monospace", textAlign: "center" as const, marginTop: 60 }}>
-          No matches found for {league}
+          {league === "CRICKET" ? "No live ICC international cricket matches right now." : `No matches found for ${league}`}
         </div>
       ) : filteredRows.length === 0 && searchQuery ? (
         <div style={{ padding: "60px 20px", textAlign: "center" as const, color: "#334155", fontFamily: "'DM Mono', monospace", fontSize: 13 }}>
@@ -263,8 +263,8 @@ export default function Sports() {
 
       {isCricket && (
         <div style={{ marginTop: 26 }}>
-          <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 700, color: "#f0f4ff", margin: 0 }}>ICC Cricket · Past 2 Months</h2>
-          <p style={{ color: "#475569", fontSize: 12, marginTop: 5, fontFamily: "'DM Mono', monospace" }}>Recent ICC entries from the last 60 days</p>
+          <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 700, color: "#f0f4ff", margin: 0 }}>ICC Cricket · Past 1 Month</h2>
+          <p style={{ color: "#475569", fontSize: 12, marginTop: 5, fontFamily: "'DM Mono', monospace" }}>Recent ICC entries from the last 30 days</p>
 
           <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
             {hl
@@ -276,7 +276,7 @@ export default function Sports() {
               : cricketHistory.length === 0
                 ? (
                   <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: 14, color: "#64748b", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
-                    No ICC cricket history found for the last 60 days.
+                    No ICC international cricket history found for the last 30 days.
                   </div>
                 )
                 : filteredCricketHistory.length === 0 && searchQuery

@@ -75,11 +75,6 @@ const LEAGUE_GROUPS: Record<string, LeagueConfig[]> = {
     { sport: 'rugby', league: '283', label: 'RUGBY' },
     { sport: 'rugby-league', league: '3', label: 'RUGBY' },
   ],
-  FOOTBALL: [
-    { sport: 'soccer', league: 'fifa.world', label: 'FOOTBALL' },
-    { sport: 'soccer', league: 'uefa.champions', label: 'FOOTBALL' },
-    { sport: 'soccer', league: 'eng.1', label: 'FOOTBALL' },
-  ],
   BASKETBALL: [
     { sport: 'basketball', league: 'fiba', label: 'BASKETBALL' },
     { sport: 'basketball', league: 'mens-olympics-basketball', label: 'BASKETBALL' },
@@ -108,7 +103,7 @@ function cricketTitleToTeams(title: string): { home: string; away: string } {
 
 function getLeagueConfigs(league: string): LeagueConfig[] {
   if (league === 'ALL') {
-    return [...LEAGUE_GROUPS.RUGBY, ...LEAGUE_GROUPS.FOOTBALL, ...LEAGUE_GROUPS.BASKETBALL];
+    return [...LEAGUE_GROUPS.RUGBY, ...LEAGUE_GROUPS.BASKETBALL];
   }
   return LEAGUE_GROUPS[league] ?? [];
 }
@@ -162,12 +157,7 @@ async function fetchIccCricketRssItems(): Promise<CricketRssItem[]> {
   const strictIccInternational = allItems.filter(
     (item) => isIccMatchTitle(item.title) && isInternationalCricketTitle(item.title),
   );
-
-  // Some feeds omit tournament labels; keep results strict to international teams
-  // even when explicit ICC keywords are missing.
-  const mapped = strictIccInternational.length > 0
-    ? strictIccInternational
-    : allItems.filter((item) => isInternationalCricketTitle(item.title));
+  const mapped = strictIccInternational;
 
   // Deduplicate identical title+timestamp pairs from feed mirrors.
   const seen = new Set<string>();
@@ -202,7 +192,7 @@ async function fetchCricketLiveScores(): Promise<MatchScore[]> {
   });
 }
 
-export async function fetchCricketHistory(days = 60): Promise<MatchScore[]> {
+export async function fetchCricketHistory(days = 30): Promise<MatchScore[]> {
   const from = Date.now() - days * 24 * 60 * 60 * 1000;
   const items = await fetchIccCricketRssItems();
 

@@ -42,7 +42,6 @@ describe('Sports Page', () => {
         expect(screen.getByText('All Sports')).toBeInTheDocument();
         expect(screen.getByText('Cricket')).toBeInTheDocument();
         expect(screen.getByText('Rugby')).toBeInTheDocument();
-        expect(screen.getByText('Football')).toBeInTheDocument();
         expect(screen.getByText('Basketball')).toBeInTheDocument();
       });
     });
@@ -65,7 +64,7 @@ describe('Sports Page', () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText(/ICC live matches \+ last 2 months history/)
+          screen.getByText(/ICC live matches \+ last 1 month history/)
         ).toBeInTheDocument();
       });
     });
@@ -100,11 +99,11 @@ describe('Sports Page', () => {
         expect(rugbyButton).toHaveStyle('color: #ec4899');
       });
 
-      const footballButton = screen.getByText('Football');
-      fireEvent.click(footballButton);
+      const basketballButton = screen.getByText('Basketball');
+      fireEvent.click(basketballButton);
 
       await waitFor(() => {
-        expect(footballButton).toHaveStyle('color: #ec4899');
+        expect(basketballButton).toHaveStyle('color: #ec4899');
         // Rugby button should no longer be highlighted
         expect(rugbyButton).not.toHaveStyle('color: #ec4899');
       });
@@ -248,8 +247,8 @@ describe('Sports Page', () => {
     it('league buttons have appropriate cursor style', async () => {
       renderWithProviders(<Sports />);
 
-      const footballButton = await screen.findByText('Football');
-      expect(footballButton).toHaveStyle('cursor: pointer');
+      const basketballButton = await screen.findByText('Basketball');
+      expect(basketballButton).toHaveStyle('cursor: pointer');
     });
   });
 
@@ -258,10 +257,10 @@ describe('Sports Page', () => {
       renderWithProviders(<Sports />);
 
       const cricketButton = await screen.findByText('Cricket');
-      const footballButton = screen.getByText('Football');
+      const basketballButton = screen.getByText('Basketball');
 
       fireEvent.click(cricketButton);
-      fireEvent.click(footballButton);
+      fireEvent.click(basketballButton);
       fireEvent.click(cricketButton);
 
       await waitFor(() => {
