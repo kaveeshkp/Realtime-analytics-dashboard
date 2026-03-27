@@ -12,11 +12,24 @@ import { fmt, pctColor } from "../../utils/dashFormat";
 import type { CryptoAsset, DataPoint } from "../../types/dashboard.types";
 
 interface CryptoProps {
+  dark: boolean;
   watchlist: string[];
   setWatchlist: (fn: (w: string[]) => string[]) => void;
 }
 
-export default function Crypto({ watchlist, setWatchlist }: CryptoProps) {
+export default function Crypto({ dark, watchlist, setWatchlist }: CryptoProps) {
+  const theme = {
+    text: dark ? "#f0f4ff" : "#0f172a",
+    muted: dark ? "#475569" : "#64748b",
+    soft: dark ? "#334155" : "#64748b",
+    panel: dark ? "rgba(255,255,255,0.03)" : "#ffffff",
+    panelBorder: dark ? "1px solid rgba(255,255,255,0.07)" : "1px solid #dbe3ef",
+    headerBorder: dark ? "1px solid rgba(255,255,255,0.06)" : "1px solid #e2e8f0",
+    rowBorder: dark ? "1px solid rgba(255,255,255,0.04)" : "1px solid #edf2f7",
+    tooltipBg: dark ? "#0f172a" : "#ffffff",
+    tooltipBorder: dark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #dbe3ef",
+  };
+
   const [selectedId, setSelectedId] = useState("bitcoin");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -68,8 +81,8 @@ export default function Crypto({ watchlist, setWatchlist }: CryptoProps) {
   return (
     <div style={{ animation: "fadeIn 0.4s ease" }}>
       <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 800, color: "#f0f4ff", margin: 0 }}>Cryptocurrency</h1>
-        <p style={{ color: "#475569", fontSize: 13, marginTop: 4, fontFamily: "'DM Mono', monospace" }}>Top 10 by market cap · Search across all loaded coins</p>
+        <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 800, color: theme.text, margin: 0 }}>Cryptocurrency</h1>
+        <p style={{ color: theme.muted, fontSize: 13, marginTop: 4, fontFamily: "'DM Mono', monospace" }}>Top 10 by market cap · Search across all loaded coins</p>
       </div>
 
       {(ce || he) && (
@@ -83,19 +96,19 @@ export default function Crypto({ watchlist, setWatchlist }: CryptoProps) {
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 24 }}>
-        <KpiCard label="Total Market Cap" value={totalMarketCap ? fmt(totalMarketCap) : "—"} sub={`Top ${cryptos.length} coins`} color="#f59e0b" />
-        <KpiCard label="24h Volume"        value={totalVolume ? fmt(totalVolume) : "—"}   sub="Across all pairs"  color="#3b82f6" />
-        <KpiCard label="BTC Dominance"     value={`${btcDom}%`}                           sub="Of total cap"      color="#22d3a5" />
+        <KpiCard dark={dark} label="Total Market Cap" value={totalMarketCap ? fmt(totalMarketCap) : "—"} sub={`Top ${cryptos.length} coins`} color="#f59e0b" />
+        <KpiCard dark={dark} label="24h Volume"        value={totalVolume ? fmt(totalVolume) : "—"}   sub="Across all pairs"  color="#3b82f6" />
+        <KpiCard dark={dark} label="BTC Dominance"     value={`${btcDom}%`}                           sub="Of total cap"      color="#22d3a5" />
       </div>
 
       <div style={{ marginBottom: 20 }}>
-        <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Search crypto..." />
+        <SearchBar dark={dark} value={searchQuery} onChange={setSearchQuery} placeholder="Search crypto..." />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 20 }}>
         {/* Coin list table */}
-        <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, overflow: "hidden" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "50px 1fr 120px 100px 110px 80px", padding: "12px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", fontSize: 11, color: "#334155", fontFamily: "'DM Mono', monospace", letterSpacing: 1 }}>
+        <div style={{ background: theme.panel, border: theme.panelBorder, borderRadius: 14, overflow: "hidden" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "50px 1fr 120px 100px 110px 80px", padding: "12px 20px", borderBottom: theme.headerBorder, fontSize: 11, color: theme.soft, fontFamily: "'DM Mono', monospace", letterSpacing: 1 }}>
             <span>#</span><span>NAME</span>
             <span style={{ textAlign: "right" as const }}>PRICE</span>
             <span style={{ textAlign: "right" as const }}>24H</span>
@@ -104,19 +117,20 @@ export default function Crypto({ watchlist, setWatchlist }: CryptoProps) {
           </div>
           {isLoading
             ? Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} style={{ display: "grid", gridTemplateColumns: "50px 1fr 120px 100px 110px 80px", padding: "14px 20px", gap: 8, borderBottom: "1px solid rgba(255,255,255,0.04)", alignItems: "center" }}>
+              <div key={i} style={{ display: "grid", gridTemplateColumns: "50px 1fr 120px 100px 110px 80px", padding: "14px 20px", gap: 8, borderBottom: theme.rowBorder, alignItems: "center" }}>
                 <Skel w={20} /><Skel w={110} /><Skel w={80} /><Skel w={60} /><Skel w={90} /><Skel w={80} h={32} />
               </div>
             ))
             : visibleCryptos.length === 0 && searchQuery
               ? (
-                <div style={{ padding: "60px 20px", textAlign: "center" as const, color: "#334155", fontFamily: "'DM Mono', monospace", fontSize: 13 }}>
+                <div style={{ padding: "60px 20px", textAlign: "center" as const, color: theme.soft, fontFamily: "'DM Mono', monospace", fontSize: 13 }}>
                   No results found for "{searchQuery}"
                 </div>
               )
               : visibleCryptos.map((c, i) => (
                 <CryptoRow
                   key={c.id}
+                  dark={dark}
                   crypto={c}
                   index={i}
                   isSelected={selectedId === c.id}
@@ -129,7 +143,7 @@ export default function Crypto({ watchlist, setWatchlist }: CryptoProps) {
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {selectedCoin && (
             <>
-              <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: 20 }}>
+              <div style={{ background: theme.panel, border: theme.panelBorder, borderRadius: 14, padding: 20 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <OptimizedImage
@@ -141,17 +155,17 @@ export default function Crypto({ watchlist, setWatchlist }: CryptoProps) {
                     />
                     <div>
                       <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, color: "#f59e0b", fontSize: 22 }}>{selectedCoin.symbol}</div>
-                      <div style={{ fontSize: 12, color: "#475569", marginTop: 2 }}>{selectedCoin.name}</div>
+                      <div style={{ fontSize: 12, color: theme.muted, marginTop: 2 }}>{selectedCoin.name}</div>
                     </div>
                   </div>
                   <button
                     onClick={() => setWatchlist(w => inWatchlist ? w.filter(s => s !== selectedCoin.symbol) : [...w, selectedCoin.symbol])}
-                    style={{ background: inWatchlist ? "rgba(245,158,11,0.15)" : "rgba(255,255,255,0.05)", border: `1px solid ${inWatchlist ? "rgba(245,158,11,0.4)" : "rgba(255,255,255,0.1)"}`, color: inWatchlist ? "#f59e0b" : "#64748b", borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontSize: 12, fontFamily: "'DM Mono', monospace" }}
+                    style={{ background: inWatchlist ? "rgba(245,158,11,0.15)" : dark ? "rgba(255,255,255,0.05)" : "#ffffff", border: `1px solid ${inWatchlist ? "rgba(245,158,11,0.4)" : dark ? "rgba(255,255,255,0.1)" : "#cbd5e1"}`, color: inWatchlist ? "#f59e0b" : theme.muted, borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontSize: 12, fontFamily: "'DM Mono', monospace" }}
                   >
                     {inWatchlist ? "★ Watching" : "☆ Watch"}
                   </button>
                 </div>
-                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, color: "#f0f4ff", fontWeight: 700 }}>
+                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, color: theme.text, fontWeight: 700 }}>
                   {selectedCoin.price > 1 ? fmt(selectedCoin.price) : `$${selectedCoin.price.toFixed(4)}`}
                 </div>
                 <div style={{ fontSize: 13, color: pctColor(selectedCoin.pct), marginTop: 4 }}>
@@ -159,7 +173,7 @@ export default function Crypto({ watchlist, setWatchlist }: CryptoProps) {
                 </div>
               </div>
 
-              <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: 16 }}>
+              <div style={{ background: theme.panel, border: theme.panelBorder, borderRadius: 14, padding: 16 }}>
                 {history && history.length > 0 ? (
                   <ResponsiveContainer width="100%" height={160}>
                     <AreaChart data={history}>
@@ -171,23 +185,23 @@ export default function Crypto({ watchlist, setWatchlist }: CryptoProps) {
                       </defs>
                       <XAxis dataKey="date" hide />
                       <YAxis hide domain={["auto", "auto"]} />
-                      <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontFamily: "'DM Mono', monospace", fontSize: 11 }} itemStyle={{ color: "#f59e0b" }} formatter={(v: number) => [v > 1 ? `$${v.toLocaleString()}` : `$${v.toFixed(4)}`, ""]} />
+                      <Tooltip contentStyle={{ background: theme.tooltipBg, border: theme.tooltipBorder, borderRadius: 8, fontFamily: "'DM Mono', monospace", fontSize: 11 }} itemStyle={{ color: "#f59e0b" }} formatter={(v: number) => [v > 1 ? `$${v.toLocaleString()}` : `$${v.toFixed(4)}`, ""]} />
                       <Area type="monotone" dataKey="value" stroke="#f59e0b" strokeWidth={2} fill="url(#cg)" dot={false} />
                     </AreaChart>
                   </ResponsiveContainer>
                 ) : <Skel w="100%" h={160} />}
               </div>
 
-              <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: 16 }}>
+              <div style={{ background: theme.panel, border: theme.panelBorder, borderRadius: 14, padding: 16 }}>
                 {[
                   ["Market Cap", fmt(selectedCoin.marketCap)],
                   ["24h Volume", fmt(selectedCoin.volume)],
                   ["24h Change", `${selectedCoin.pct > 0 ? "+" : ""}${selectedCoin.pct.toFixed(2)}%`],
                   ["Rank", `#${cryptos.findIndex(c => c.id === selectedId) + 1}`],
                 ].map(([l, v]) => (
-                  <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                    <span style={{ fontSize: 12, color: "#475569", fontFamily: "'DM Mono', monospace" }}>{l}</span>
-                    <span style={{ fontSize: 12, color: "#94a3b8", fontFamily: "'DM Mono', monospace" }}>{v}</span>
+                  <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: theme.rowBorder }}>
+                    <span style={{ fontSize: 12, color: theme.muted, fontFamily: "'DM Mono', monospace" }}>{l}</span>
+                    <span style={{ fontSize: 12, color: theme.soft, fontFamily: "'DM Mono', monospace" }}>{v}</span>
                   </div>
                 ))}
               </div>

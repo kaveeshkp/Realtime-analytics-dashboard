@@ -5,6 +5,7 @@ import { fmt, pctColor, pctBg } from '../../utils/dashFormat';
 import type { CryptoAsset } from '../../types/dashboard.types';
 
 interface CryptoRowProps {
+  dark: boolean;
   crypto: CryptoAsset;
   index: number;
   isSelected: boolean;
@@ -16,11 +17,17 @@ interface CryptoRowProps {
  * when other rows or parent state changes
  */
 export const CryptoRow = memo(function CryptoRow({
+  dark,
   crypto: c,
   index: i,
   isSelected,
   onSelect,
 }: CryptoRowProps) {
+  const rowBorder = dark ? '1px solid rgba(255,255,255,0.04)' : '1px solid #edf2f7';
+  const indexColor = dark ? '#334155' : '#64748b';
+  const textColor = dark ? '#f0f4ff' : '#0f172a';
+  const mutedColor = dark ? '#475569' : '#64748b';
+
   const fallbackLogo = `https://cryptoicons.org/api/icon/${c.symbol.toLowerCase()}/64`;
 
   return (
@@ -32,25 +39,25 @@ export const CryptoRow = memo(function CryptoRow({
         padding: '14px 20px',
         cursor: 'pointer',
         alignItems: 'center',
-        borderBottom: '1px solid rgba(255,255,255,0.04)',
+        borderBottom: rowBorder,
         background: isSelected ? 'rgba(245,158,11,0.06)' : 'transparent',
         borderLeft: isSelected ? '2px solid #f59e0b' : '2px solid transparent',
         transition: 'all 0.15s',
       }}
     >
-      <span style={{ fontFamily: "'DM Mono', monospace", color: '#334155', fontSize: 13 }}>
+      <span style={{ fontFamily: "'DM Mono', monospace", color: indexColor, fontSize: 13 }}>
         {i + 1}
       </span>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <OptimizedImage src={c.image || fallbackLogo} alt={c.name} width={20} height={20} fallbackSrc={fallbackLogo} />
         <div>
-          <div style={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, color: '#f0f4ff', fontSize: 14 }}>
+          <div style={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, color: textColor, fontSize: 14 }}>
             {c.symbol}
           </div>
-          <div style={{ fontSize: 11, color: '#475569' }}>{c.name}</div>
+          <div style={{ fontSize: 11, color: mutedColor }}>{c.name}</div>
         </div>
       </div>
-      <span style={{ fontFamily: "'DM Mono', monospace", color: '#f0f4ff', fontSize: 13, textAlign: 'right' as const }}>
+      <span style={{ fontFamily: "'DM Mono', monospace", color: textColor, fontSize: 13, textAlign: 'right' as const }}>
         {c.price > 1 ? fmt(c.price) : `$${c.price.toFixed(4)}`}
       </span>
       <span style={{ textAlign: 'right' as const }}>
@@ -59,7 +66,7 @@ export const CryptoRow = memo(function CryptoRow({
           {c.pct.toFixed(2)}%
         </span>
       </span>
-      <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: '#475569', textAlign: 'right' as const }}>
+      <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: mutedColor, textAlign: 'right' as const }}>
         {fmt(c.marketCap)}
       </span>
       <div style={{ display: 'flex', justifyContent: 'flex-end' as const }}>

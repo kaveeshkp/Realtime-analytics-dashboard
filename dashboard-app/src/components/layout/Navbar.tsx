@@ -18,7 +18,6 @@ interface NavbarProps {
   navItems: NavItem[];
   ticker?: TickerSnapshot[];
   dark: boolean;
-  onToggleTheme: () => void;
   onOpenWatchlist?: () => void;
 }
 
@@ -30,10 +29,18 @@ export function Navbar({
   navItems,
   ticker = [],
   dark,
-  onToggleTheme,
   onOpenWatchlist,
 }: NavbarProps) {
   const [tickIdx, setTickIdx] = useState(0);
+  const navBg = dark ? "rgba(8,12,20,0.92)" : "rgba(255,255,255,0.95)";
+  const navBorder = dark ? "1px solid rgba(255,255,255,0.06)" : "1px solid #dbe3ef";
+  const logoText = dark ? "#f0f4ff" : "#0f172a";
+  const navInactive = dark ? "#94a3b8" : "#475569";
+  const tickerText = dark ? "#94a3b8" : "#475569";
+  const tickerSymbol = dark ? "#f0f4ff" : "#0f172a";
+  const divider = dark ? "rgba(255,255,255,0.08)" : "#dbe3ef";
+  const iconBtnBg = dark ? "rgba(255,255,255,0.05)" : "#ffffff";
+  const iconBtnBorder = dark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #cbd5e1";
 
   // Depend only on ticker.length — ticker array reference changes every App render
   // (stocks/cryptos are new arrays on each fetch), so using the full array as a dep
@@ -54,9 +61,9 @@ export function Navbar({
         position: "sticky",
         top: 0,
         zIndex: 50,
-        background: "rgba(8,12,20,0.92)",
+        background: navBg,
         backdropFilter: "blur(20px)",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        borderBottom: navBorder,
         padding: "0 24px",
         display: "flex",
         alignItems: "center",
@@ -84,7 +91,7 @@ export function Navbar({
             fontFamily: "'Syne', sans-serif",
             fontWeight: 800,
             fontSize: 16,
-            color: "#f0f4ff",
+            color: logoText,
             letterSpacing: -0.5,
           }}
         >
@@ -105,7 +112,7 @@ export function Navbar({
                 page === n.id
                   ? "1px solid rgba(34,211,165,0.3)"
                   : "1px solid transparent",
-              color: page === n.id ? "#22d3a5" : "#64748b",
+              color: page === n.id ? "#22d3a5" : navInactive,
               borderRadius: 8,
               padding: "6px 14px",
               cursor: "pointer",
@@ -133,10 +140,10 @@ export function Navbar({
             style={{
               fontSize: 12,
               fontFamily: "'DM Mono', monospace",
-              color: "#94a3b8",
+              color: tickerText,
             }}
           >
-            <span style={{ color: "#f0f4ff", fontWeight: 600 }}>
+            <span style={{ color: tickerSymbol, fontWeight: 600 }}>
               {shown.symbol}
             </span>{" "}
             <span style={{ color: pctColor(shown.pct) }}>
@@ -150,7 +157,7 @@ export function Navbar({
           style={{
             width: 1,
             height: 20,
-            background: "rgba(255,255,255,0.08)",
+            background: divider,
           }}
         />
 
@@ -159,8 +166,8 @@ export function Navbar({
             onClick={onOpenWatchlist}
             title="Watchlist"
             style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.1)",
+              background: iconBtnBg,
+              border: iconBtnBorder,
               borderRadius: 8,
               padding: "6px 10px",
               cursor: "pointer",
@@ -174,39 +181,13 @@ export function Navbar({
               e.currentTarget.style.borderColor = "rgba(34, 211, 165, 0.3)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(255,255,255,0.05)";
-              e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
+              e.currentTarget.style.background = iconBtnBg;
+              e.currentTarget.style.borderColor = dark ? "rgba(255,255,255,0.1)" : "#cbd5e1";
             }}
           >
             <Icon name="watchlist" size={16} color="accent" />
           </button>
         )}
-
-        <button
-          onClick={onToggleTheme}
-          title="Toggle theme"
-          style={{
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 8,
-            padding: "6px 10px",
-            cursor: "pointer",
-            fontSize: 14,
-            display: "flex",
-            alignItems: "center",
-            transition: "all 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(245, 158, 11, 0.12)";
-            e.currentTarget.style.borderColor = "rgba(245, 158, 11, 0.3)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "rgba(255,255,255,0.05)";
-            e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
-          }}
-        >
-          <Icon name={dark ? "sun" : "moon"} size={16} color="accent" />
-        </button>
       </div>
     </nav>
   );

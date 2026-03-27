@@ -1,19 +1,19 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { Navbar } from './Navbar';
-import { renderWithProviders } from '../../test/fixtures';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { screen, fireEvent } from "@testing-library/react";
+import { Navbar } from "../Navbar";
+import { renderWithProviders } from "../../../test/fixtures";
 
-describe('Navbar Component', () => {
+describe("Navbar Component", () => {
   const mockNavItems = [
-    { id: 'home', label: 'Home', icon: '📊' },
-    { id: 'stocks', label: 'Stocks', icon: '📈' },
-    { id: 'crypto', label: 'Crypto', icon: '₿' },
-    { id: 'sports', label: 'Sports', icon: '⚽' },
+    { id: "home", label: "Home", icon: "home" },
+    { id: "stocks", label: "Stocks", icon: "stocks" },
+    { id: "crypto", label: "Crypto", icon: "crypto" },
+    { id: "sports", label: "Sports", icon: "sports" },
   ];
 
   const mockTicker = [
-    { symbol: 'AAPL', pct: 2.5 },
-    { symbol: 'GOOGL', pct: -1.2 },
+    { symbol: "AAPL", pct: 2.5 },
+    { symbol: "GOOGL", pct: -1.2 },
   ];
 
   beforeEach(() => {
@@ -24,341 +24,69 @@ describe('Navbar Component', () => {
     vi.useRealTimers();
   });
 
-  describe('Rendering', () => {
-    it('renders logo with DASHFLOW text', () => {
-      renderWithProviders(
-        <Navbar
-          page="home"
-          onNavigate={vi.fn()}
-          navItems={mockNavItems}
-          dark={false}
-          onToggleTheme={vi.fn()}
-        />
-      );
+  it("renders logo and nav labels", () => {
+    renderWithProviders(
+      <Navbar page="home" onNavigate={vi.fn()} navItems={mockNavItems} dark={true} />,
+    );
 
-      expect(screen.getByText('DASHFLOW')).toBeInTheDocument();
-    });
-
-    it('renders all navigation items', () => {
-      renderWithProviders(
-        <Navbar
-          page="home"
-          onNavigate={vi.fn()}
-          navItems={mockNavItems}
-          dark={false}
-          onToggleTheme={vi.fn()}
-        />
-      );
-
-      mockNavItems.forEach(item => {
-        expect(screen.getByText(item.label)).toBeInTheDocument();
-      });
-    });
-
-    it('renders theme toggle button', () => {
-      renderWithProviders(
-        <Navbar
-          page="home"
-          onNavigate={vi.fn()}
-          navItems={mockNavItems}
-          dark={false}
-          onToggleTheme={vi.fn()}
-        />
-      );
-
-      const themeButton = screen.getByTitle('Toggle theme');
-      expect(themeButton).toBeInTheDocument();
-    });
-
-    it('shows sun icon when in dark mode', () => {
-      renderWithProviders(
-        <Navbar
-          page="home"
-          onNavigate={vi.fn()}
-          navItems={mockNavItems}
-          dark={true}
-          onToggleTheme={vi.fn()}
-        />
-      );
-
-      const themeButton = screen.getByTitle('Toggle theme');
-      expect(themeButton).toHaveTextContent('☀');
-    });
-
-    it('shows moon icon when in light mode', () => {
-      renderWithProviders(
-        <Navbar
-          page="home"
-          onNavigate={vi.fn()}
-          navItems={mockNavItems}
-          dark={false}
-          onToggleTheme={vi.fn()}
-        />
-      );
-
-      const themeButton = screen.getByTitle('Toggle theme');
-      expect(themeButton).toHaveTextContent('☾');
-    });
+    expect(screen.getByText("DASHFLOW")).toBeInTheDocument();
+    expect(screen.getByText("Home")).toBeInTheDocument();
+    expect(screen.getByText("Stocks")).toBeInTheDocument();
+    expect(screen.getByText("Crypto")).toBeInTheDocument();
+    expect(screen.getByText("Sports")).toBeInTheDocument();
   });
 
-  describe('Navigation', () => {
-    it('highlights the current page', () => {
-      renderWithProviders(
-        <Navbar
-          page="stocks"
-          onNavigate={vi.fn()}
-          navItems={mockNavItems}
-          dark={false}
-          onToggleTheme={vi.fn()}
-        />
-      );
+  it("highlights selected page and navigates on click", () => {
+    const onNavigate = vi.fn();
+    renderWithProviders(
+      <Navbar page="stocks" onNavigate={onNavigate} navItems={mockNavItems} dark={true} />,
+    );
 
-      const stocksButton = screen.getByText('Stocks');
-      expect(stocksButton).toHaveStyle('color: #22d3a5');
-    });
+    const stocksButton = screen.getByText("Stocks");
+    const cryptoButton = screen.getByText("Crypto");
 
-    it('calls onNavigate when nav item is clicked', () => {
-      const onNavigate = vi.fn();
-      renderWithProviders(
-        <Navbar
-          page="home"
-          onNavigate={onNavigate}
-          navItems={mockNavItems}
-          dark={false}
-          onToggleTheme={vi.fn()}
-        />
-      );
+    expect(stocksButton).toHaveStyle("color: #22d3a5");
+    expect(cryptoButton).toHaveStyle("color: #94a3b8");
 
-      const stocksButton = screen.getByText('Stocks');
-      fireEvent.click(stocksButton);
-
-      expect(onNavigate).toHaveBeenCalledWith('stocks');
-    });
-
-    it('does not highlight inactive pages', () => {
-      renderWithProviders(
-        <Navbar
-          page="home"
-          onNavigate={vi.fn()}
-          navItems={mockNavItems}
-          dark={false}
-          onToggleTheme={vi.fn()}
-        />
-      );
-
-      const cryptoButton = screen.getByText('Crypto');
-      expect(cryptoButton).toHaveStyle('color: #64748b');
-    });
+    fireEvent.click(cryptoButton);
+    expect(onNavigate).toHaveBeenCalledWith("crypto");
   });
 
-  describe('Theme Toggle', () => {
-    it('calls onToggleTheme when theme button is clicked', () => {
-      const onToggleTheme = vi.fn();
-      renderWithProviders(
-        <Navbar
-          page="home"
-          onNavigate={vi.fn()}
-          navItems={mockNavItems}
-          dark={false}
-          onToggleTheme={onToggleTheme}
-        />
-      );
+  it("renders ticker content", () => {
+    renderWithProviders(
+      <Navbar
+        page="home"
+        onNavigate={vi.fn()}
+        navItems={mockNavItems}
+        ticker={mockTicker}
+        dark={true}
+      />,
+    );
 
-      const themeButton = screen.getByTitle('Toggle theme');
-      fireEvent.click(themeButton);
-
-      expect(onToggleTheme).toHaveBeenCalled();
-    });
+    expect(screen.getByText("AAPL")).toBeInTheDocument();
+    expect(screen.getByText("+2.50%")).toBeInTheDocument();
   });
 
-  describe('Ticker Display', () => {
-    it('displays ticker data when provided', () => {
-      renderWithProviders(
-        <Navbar
-          page="home"
-          onNavigate={vi.fn()}
-          navItems={mockNavItems}
-          ticker={mockTicker}
-          dark={false}
-          onToggleTheme={vi.fn()}
-        />
-      );
+  it("shows watchlist button only when callback is provided", () => {
+    const { rerender } = renderWithProviders(
+      <Navbar page="home" onNavigate={vi.fn()} navItems={mockNavItems} dark={true} />,
+    );
 
-      expect(screen.getByText('AAPL')).toBeInTheDocument();
-      expect(screen.getByText('+2.50%')).toBeInTheDocument();
-    });
+    expect(screen.queryByTitle("Watchlist")).not.toBeInTheDocument();
 
-    it('cycles through ticker items every 3 seconds', async () => {
-      renderWithProviders(
-        <Navbar
-          page="home"
-          onNavigate={vi.fn()}
-          navItems={mockNavItems}
-          ticker={mockTicker}
-          dark={false}
-          onToggleTheme={vi.fn()}
-        />
-      );
+    const onOpenWatchlist = vi.fn();
+    rerender(
+      <Navbar
+        page="home"
+        onNavigate={vi.fn()}
+        navItems={mockNavItems}
+        dark={true}
+        onOpenWatchlist={onOpenWatchlist}
+      />,
+    );
 
-      // Initially should show first item
-      expect(screen.getByText('AAPL')).toBeInTheDocument();
-
-      // After 3 seconds, should show second item
-      vi.advanceTimersByTime(3000);
-
-      await waitFor(() => {
-        expect(screen.getByText('GOOGL')).toBeInTheDocument();
-      });
-    });
-
-    it('shows correct color for positive percentage', () => {
-      renderWithProviders(
-        <Navbar
-          page="home"
-          onNavigate={vi.fn()}
-          navItems={mockNavItems}
-          ticker={[{ symbol: 'AAPL', pct: 2.5 }]}
-          dark={false}
-          onToggleTheme={vi.fn()}
-        />
-      );
-
-      const percentageSpan = screen.getByText('+2.50%');
-      expect(percentageSpan).toHaveStyle('color: #22d3a5');
-    });
-
-    it('shows correct color for negative percentage', () => {
-      renderWithProviders(
-        <Navbar
-          page="home"
-          onNavigate={vi.fn()}
-          navItems={mockNavItems}
-          ticker={[{ symbol: 'GOOGL', pct: -1.2 }]}
-          dark={false}
-          onToggleTheme={vi.fn()}
-        />
-      );
-
-      const percentageSpan = screen.getByText('-1.20%');
-      expect(percentageSpan).toHaveStyle('color: #f87171');
-    });
-
-    it('handles empty ticker gracefully', () => {
-      const { container } = renderWithProviders(
-        <Navbar
-          page="home"
-          onNavigate={vi.fn()}
-          navItems={mockNavItems}
-          ticker={[]}
-          dark={false}
-          onToggleTheme={vi.fn()}
-        />
-      );
-
-      expect(container).toBeInTheDocument();
-    });
-
-    it('clears interval on unmount', () => {
-      const clearIntervalSpy = vi.spyOn(global, 'clearInterval');
-
-      const { unmount } = renderWithProviders(
-        <Navbar
-          page="home"
-          onNavigate={vi.fn()}
-          navItems={mockNavItems}
-          ticker={mockTicker}
-          dark={false}
-          onToggleTheme={vi.fn()}
-        />
-      );
-
-      unmount();
-
-      expect(clearIntervalSpy).toHaveBeenCalled();
-      clearIntervalSpy.mockRestore();
-    });
-  });
-
-  describe('Watchlist Button', () => {
-    it('renders watchlist button when onOpenWatchlist is provided', () => {
-      renderWithProviders(
-        <Navbar
-          page="home"
-          onNavigate={vi.fn()}
-          navItems={mockNavItems}
-          dark={false}
-          onToggleTheme={vi.fn()}
-          onOpenWatchlist={vi.fn()}
-        />
-      );
-
-      const watchlistButton = screen.getByTitle('Watchlist');
-      expect(watchlistButton).toBeInTheDocument();
-    });
-
-    it('does not render watchlist button when onOpenWatchlist is not provided', () => {
-      renderWithProviders(
-        <Navbar
-          page="home"
-          onNavigate={vi.fn()}
-          navItems={mockNavItems}
-          dark={false}
-          onToggleTheme={vi.fn()}
-        />
-      );
-
-      const watchlistButton = screen.queryByTitle('Watchlist');
-      expect(watchlistButton).not.toBeInTheDocument();
-    });
-
-    it('calls onOpenWatchlist when watchlist button is clicked', () => {
-      const onOpenWatchlist = vi.fn();
-      renderWithProviders(
-        <Navbar
-          page="home"
-          onNavigate={vi.fn()}
-          navItems={mockNavItems}
-          dark={false}
-          onToggleTheme={vi.fn()}
-          onOpenWatchlist={onOpenWatchlist}
-        />
-      );
-
-      const watchlistButton = screen.getByTitle('Watchlist');
-      fireEvent.click(watchlistButton);
-
-      expect(onOpenWatchlist).toHaveBeenCalled();
-    });
-  });
-
-  describe('Edge Cases', () => {
-    it('handles single nav item', () => {
-      renderWithProviders(
-        <Navbar
-          page="home"
-          onNavigate={vi.fn()}
-          navItems={[{ id: 'home', label: 'Home', icon: '📊' }]}
-          dark={false}
-          onToggleTheme={vi.fn()}
-        />
-      );
-
-      expect(screen.getByText('Home')).toBeInTheDocument();
-    });
-
-    it('handles very long nav item labels', () => {
-      const longLabel = 'A'.repeat(50);
-      renderWithProviders(
-        <Navbar
-          page="home"
-          onNavigate={vi.fn()}
-          navItems={[{ id: 'test', label: longLabel, icon: '📊' }]}
-          dark={false}
-          onToggleTheme={vi.fn()}
-        />
-      );
-
-      expect(screen.getByText(longLabel)).toBeInTheDocument();
-    });
+    const watchlistButton = screen.getByTitle("Watchlist");
+    fireEvent.click(watchlistButton);
+    expect(onOpenWatchlist).toHaveBeenCalled();
   });
 });

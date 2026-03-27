@@ -4,12 +4,14 @@ interface SearchBarProps {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  dark?: boolean;
 }
 
 export function SearchBar({
   value,
   onChange,
   placeholder = "Search symbol or name…",
+  dark = true,
 }: SearchBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -25,7 +27,7 @@ export function SearchBar({
         style={{
           position: "absolute",
           left: 12,
-          color: "#334155",
+          color: dark ? "#334155" : "#64748b",
           fontSize: 14,
           pointerEvents: "none",
         }}
@@ -38,11 +40,11 @@ export function SearchBar({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         style={{
-          background: "rgba(255,255,255,0.05)",
-          border: "1px solid rgba(255,255,255,0.1)",
+          background: dark ? "rgba(255,255,255,0.05)" : "#ffffff",
+          border: dark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #cbd5e1",
           borderRadius: 8,
           padding: "8px 12px 8px 32px",
-          color: "#f0f4ff",
+          color: dark ? "#f0f4ff" : "#0f172a",
           fontFamily: "'DM Mono', monospace",
           fontSize: 13,
           outline: "none",
@@ -53,7 +55,7 @@ export function SearchBar({
           e.currentTarget.style.borderColor = "rgba(59,130,246,0.5)";
         }}
         onBlur={(e) => {
-          e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
+          e.currentTarget.style.borderColor = dark ? "rgba(255,255,255,0.1)" : "#cbd5e1";
         }}
       />
       {value && (
@@ -64,7 +66,7 @@ export function SearchBar({
             right: 10,
             background: "none",
             border: "none",
-            color: "#475569",
+            color: dark ? "#475569" : "#64748b",
             cursor: "pointer",
             fontSize: 13,
             lineHeight: 1,

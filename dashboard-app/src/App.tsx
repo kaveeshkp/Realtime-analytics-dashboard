@@ -24,7 +24,7 @@ const NAV_ITEMS = [
 
 export default function App() {
   const [page,        setPage]        = useState("home");
-  const [dark,        setDark]        = useState(true);
+  const dark = true;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [watchlist,   setWatchlist]   = useState<string[]>(WATCHLIST_DEFAULT);
 
@@ -68,7 +68,6 @@ export default function App() {
           navItems={NAV_ITEMS}
           ticker={ticker}
           dark={dark}
-          onToggleTheme={() => setDark(d => !d)}
           onOpenWatchlist={() => setSidebarOpen(true)}
         />
 
@@ -86,12 +85,13 @@ export default function App() {
           setWatchlist={setWatchlist}
           stocks={stocks}
           cryptos={cryptos}
+          dark={dark}
         />
 
         <main style={{ maxWidth: 1280, margin: "0 auto", padding: "32px 24px" }}>
           <Suspense fallback={<div style={{ color: "#64748b", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>Loading view...</div>}>
-            {page === "home"      && <Home setPage={setPage} watchlist={watchlist} stocks={stocks} cryptos={cryptos} stocksLoading={stocksLoading} cryptosLoading={cryptosLoading} stocksError={stocksError} cryptosError={cryptosError} onRefreshStocks={refetchStocks} onRefreshCryptos={refetchCryptos} />}
-            {page === "crypto"    && <Crypto watchlist={watchlist} setWatchlist={setWatchlist} />}
+            {page === "home"      && <Home dark={dark} setPage={setPage} watchlist={watchlist} stocks={stocks} cryptos={cryptos} stocksLoading={stocksLoading} cryptosLoading={cryptosLoading} stocksError={stocksError} cryptosError={cryptosError} onRefreshStocks={refetchStocks} onRefreshCryptos={refetchCryptos} />}
+            {page === "crypto"    && <Crypto dark={dark} watchlist={watchlist} setWatchlist={setWatchlist} />}
             {page === "sports"    && <Sports />}
             {page === "cse"       && <CSEMarket />}
             {page === "portfolio" && <Portfolio stocks={stocks} cryptos={cryptos} />}
